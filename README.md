@@ -16,6 +16,135 @@ PC ──USB-C──► RP2040 board ──GP0 = D+ / GP1 = D- / GND──► FM
 > Analisi, problemi e verifiche ancora necessarie: [docs/PORTING-REPORT.md](docs/PORTING-REPORT.md).
 > Collaudo guidato su Windows 11: `.\scripts\hardware-test.ps1 -Board dollatek_rp2040_typec`.
 
+## Tutorial (italiano): recuperare un FM-1 con la DollaTek RP2040
+
+> **Stato:** con la DollaTek il percorso è **provato in compilazione e in simulazione, non
+> ancora su una scheda reale**. La procedura è costruita perché i primi due passaggi con
+> l'hardware (fase A e fase B) siano solo verifiche e non scrivano nulla sull'FM-1.
+> Dettagli: [cosa è verificato rispetto alla XIAO](#cosa-è-verificato-rispetto-alla-xiao).
+
+### Cosa serve
+
+- DollaTek RP2040 Core Board USB-C e un **cavo USB-C dati** (non solo ricarica) verso il PC;
+- una spina **USB-C maschio** con fili (pigtail) o, meglio, una **breakout USB-C maschio** con
+  piazzole `D+`, `D-`, `GND`, `VBUS` etichettate; 3 fili Dupont;
+- un **multimetro** (prova di continuità);
+- PC con **Windows 10/11** e internet (solo la prima volta);
+- l'FM-1 **completamente carico**;
+- per l'ultimo passo (ripristino): il firmware ufficiale **`FM-1.fwsc` (V15)** da
+  <https://www.m-vave.com/download>.
+
+### Passo 1 – Scarica il progetto
+
+In questa pagina: **Code → Download ZIP**, poi estrai lo ZIP in una cartella (es. `Documenti\FM1`).
+(Con Git: `git clone --recurse-submodules https://github.com/Nicodesy06/FM1Trasmitter-for-pico`.)
+
+### Passo 2 – Avvia il programma
+
+Doppio clic su **`FM1-Transporter.bat`**. Se Windows mostra "PC protetto da Windows":
+*Ulteriori informazioni → Esegui comunque*. La prima volta il file installa ciò che manca
+(Python con conferma, pyserial) e poi apre la finestra **FM-1 Transporter**.
+Scegli la scheda `dollatek_rp2040_typec` (già selezionata).
+
+### Passo 3 – Prepara il firmware
+
+Pulsante **1. Prepara il firmware**. Scarica il loader JieLi (controllato con SHA-256) e crea
+`artifacts\dollatek_rp2040_typec\fm1_transporter_dollatek_rp2040.uf2`. Deve finire con
+"firmware pronto".
+
+### Passo 4 – Collaudo della DollaTek da sola (fase A)
+
+Niente collegato ai pin della DollaTek, FM-1 non coinvolto. Pulsante **2. Collaudo della
+scheda**, poi rispondi alle domande:
+
+1. "Is anything wired to GP0 or GP1?" → **No**;
+2. scritte sul chip e sulla flash (se leggibili; altrimenti lascia vuoto);
+3. quando richiesto: scollega la DollaTek, **tieni premuto BOOT**, ricollegala al PC, rilascia
+   BOOT, premi OK → compare il disco `RPI-RP2` e il programma carica il firmware;
+4. "Did the LED blink?" → rispondi guardando il LED.
+
+Risultato atteso: **OK**, con le voci FM-1 ancora "REQUIRES FM-1" (normale). Il report è in
+`logs\`. Se qualcosa è **FAIL**, fermati: vedi [Problemi frequenti](#problemi-frequenti).
+
+### Passo 5 – Collega l'FM-1 (spento!)
+
+FM-1 **spento**. Tre fili, **VBUS non collegato** (isolalo con nastro):
+
+| DollaTek (USB-C in alto, componenti verso di te) | FM-1 USB-C |
+|---|---|
+| pin 1 lato sinistro = **GP0** | **D+** |
+| pin 2 = **GP1** | **D-** |
+| pin 3 = **GND** | **GND** |
+| — | VBUS: **non collegare** |
+
+Non fidarti dei colori dei fili: col multimetro verifica continuità GP0↔D+, GP1↔D-, GND↔GND e
+**nessuna** continuità tra VBUS e gli altri. Schema e dettagli:
+[DOLLATEK-RP2040-GUIDE.md](DOLLATEK-RP2040-GUIDE.md#4-collegamento-al-fm-1).
+
+### Passo 6 – Primo contatto con l'FM-1, sola lettura (fase B)
+
+Pulsante **3. Primo contatto con l'FM-1**. Conferma uno per uno i punti della checklist
+(rispondi **Sì** solo se li hai davvero verificati). Quando richiesto: scollega e ricollega la
+DollaTek, poi **accendi l'FM-1** (lo schermo resta nero: è normale). Il programma deve
+arrivare a:
+
+- chip riconosciuto: `key=980F type=3 id=856014`;
+- due letture complete **identiche** → backup salvato in `backups\fm1-dump-*.bin` (+ `.json`).
+
+**Conserva il backup.** Fino a qui nulla è stato scritto sull'FM-1.
+
+### Passo 7 – Ripristino del firmware (l'unico passo che scrive)
+
+Solo se la fase B è andata a buon fine. Copia `FM-1.fwsc` nella cartella `recovery`, apri
+PowerShell nella cartella del progetto e:
+
+```powershell
+cd recovery
+py -3 fm1_transporter_recover.py setup  --board dollatek_rp2040_typec
+py -3 fm1_transporter_recover.py wizard --board dollatek_rp2040_typec --v15 FM-1.fwsc
+```
+
+Il wizard rifà il backup (due letture), analizza la flash, mostra cosa scriverebbe (prova a
+secco) e **scrive solo dopo che digiti `WRITE`**. Non scrive mai la zona di avvio
+(`0x0000–0x3FFF`) né i dati utente oltre `0x93000`. Non spegnere nulla durante la scrittura.
+
+### Passo 8 – Fine
+
+FM-1 spento → scollega i tre fili → riaccendi l'FM-1: deve avviarsi con il firmware V15.
+
+### Problemi frequenti
+
+| Sintomo | Causa probabile | Cosa fare |
+|---|---|---|
+| Nessun disco `RPI-RP2` | cavo di sola ricarica, BOOT non premuto | altro cavo/porta USB, tieni BOOT mentre colleghi |
+| Fase A: "no Transporter data port" | firmware non partito | ripeti il passo 4; guarda la console nera del `.bat` |
+| Fase B ferma su "keying" | fili D+/D- invertiti, massa, batteria | spegni l'FM-1, scambia D+ e D-, riprova una volta; controlla GND e carica |
+| `info` diverso da `980F / 856014` | non è il chip atteso | **fermati** |
+| Le due letture differiscono | collegamento instabile | fili più corti, massa ben salda, riprova; **mai** scrivere |
+| "stock V15 firmware" | l'FM-1 non è bloccato | usa il wizard: entra in UBOOT da solo via USB-MIDI |
+
+Criteri completi per interrompere: [guida, sezione 10](DOLLATEK-RP2040-GUIDE.md#10-criteri-per-interrompere-il-recupero).
+
+### Cosa è verificato rispetto alla XIAO
+
+| Anello della catena | Codice rispetto alla XIAO | Come è stato provato qui |
+|---|---|---|
+| Avvio della scheda, clock 120 MHz | diverso solo nella configurazione (boot2 universale, esecuzione da RAM) | compilazione + immagine verificata; **non** su hardware |
+| USB verso il PC (porte COM) | identico | lato PC in simulazione |
+| Generazione USB_KEY sui pin GP0/GP1 | identico (stesso programma PIO, stesse temporizzazioni) | solo confronto del codice; il segnale reale richiede hardware |
+| Risposta della ROM JieLi, impulsi 1 ms | identico | **non simulabile** (elettrico/temporale) |
+| Host USB via PIO verso l'FM-1 | identico | **non simulabile** |
+| Protocollo UBOOT, loader, identificazione chip | identico | codice reale del firmware contro una ROM simulata |
+| Lettura flash, CRC, doppia lettura | identico | simulato |
+| Scrittura settori con limiti di sicurezza | identico | simulato (mai usato nelle fasi A/B) |
+| Strumenti PC, flash UF2, wizard | esteso (scelta scheda, controlli in più) | simulato, 193 + 74 test |
+
+In breve: la logica del recupero è **la stessa** della XIAO (gli stessi file sorgente,
+controllati da test), e tutto ciò che è logica è stato provato in simulazione. Ciò che nessuna
+simulazione può dimostrare è la parte elettrica e temporale verso l'FM-1 (chiave USB_KEY,
+risposta della ROM, host USB): sulla XIAO è dimostrata dal recupero reale del 2026-10-09,
+sulla DollaTek lo dimostreranno le fasi A e B.
+
 ## Boards
 
 | Profile (`--board`) | Board | D+ / D- | Status |
