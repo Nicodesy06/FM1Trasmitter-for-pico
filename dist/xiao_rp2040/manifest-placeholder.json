@@ -1,0 +1,49 @@
+{
+  "status": "BUILD VERIFIED",
+  "board": "xiao_rp2040",
+  "board_name": "Seeed Studio XIAO RP2040",
+  "profile_validation": "HARDWARE VERIFIED",
+  "loader": "placeholder",
+  "loader_sha256": "25f62babdb1c62753f7e293338c8ee1b6f323aec9805644b794e6581e7c5bc29",
+  "build_id": "5e3e19e12b",
+  "marker_build": "5e3e19e12b",
+  "git_commit": "5e3e19e12b91c7a632200e9ac2e7f6c49a686d48",
+  "upstream": "kurogedelic/FM-1-transporter a632d923203170e3a08565f4056dbb3fd3d65ca5",
+  "pico_pio_usb": "fe9133fc513b82cc3dc62c67cb51f2339cf29ef7 (0.6.1) + lib/pico-pio-usb-bulk-multi-xact.patch",
+  "sdk": "pico-sdk 2.2.0",
+  "sdk_version": "2.2.0",
+  "toolchain": "arm-none-eabi-gcc (Arm GNU Toolchain 14.2.Rel1 (Build arm-14.52)) 14.2.1 20241119",
+  "cmake": "cmake version 3.28.3",
+  "generator": "Ninja",
+  "host": "Linux 6.18.44-fc-v114 x86_64",
+  "built_at": "2026-10-11T13:51:16+00:00",
+  "uf2_range": "0x10000000-0x1001B100",
+  "files": {
+    "uf2": {
+      "file": "fm1_transporter_xiao_rp2040-placeholder.uf2",
+      "sha256": "b4cd12fa66bd509d690b074b891aef9d487aec3695c21ce3211ba8749a6ba719",
+      "bytes": 221696,
+      "shipped": true
+    },
+    "elf": {
+      "file": "fm1_transporter_xiao_rp2040-placeholder.elf",
+      "sha256": "15d6b412d05088abf96bdda393746a2bc1b2e22b191b5de118f154a7bde8dd6c",
+      "bytes": 1238304,
+      "shipped": false
+    },
+    "bin": {
+      "file": "fm1_transporter_xiao_rp2040-placeholder.bin",
+      "sha256": "a8b3b7a6cdc4d2b0a71a277c965ecb1ca341b63561502ec8cf3ef0f2b11fe6da",
+      "bytes": 110600,
+      "shipped": false
+    },
+    "hostonly_uf2": {
+      "file": "fm1_transporter_xiao_rp2040-hostonly-placeholder.uf2",
+      "sha256": "981137e83675881068518f5dd8817a4338779fb4895d65160e7fed23b4199847",
+      "bytes": 216576,
+      "shipped": false
+    }
+  },
+  "spliced_uf2_sha256": "66cdc4b45016b111a74a6f99b922cc65b25d18493fadc1aae497881211ad3e1e",
+  "spliced_check": "splice(placeholder, pattern, wl82loader.bin sha256 d41da6126760c9d66660bcc0cac8d27d221806c5e369a8036921efe68dca5376) == real-loader build, byte for byte"
+}
