@@ -35,6 +35,11 @@ simulator or the firmware's protocol code compiled for the PC with a mock JieLi 
 
 ## Quick start (Windows 11)
 
+**Easiest:** double-click **`FM1-Transporter.bat`**. It finds Python (offers to install it
+with winget), installs pyserial, and opens a small window with three buttons: prepare the
+firmware, test the board (phase A), first read-only FM-1 contact (phase B). The procedures'
+questions appear as Yes/No dialogs. Same code as the commands below.
+
 Prerequisites: Git, Python 3.8+; to compile, the VS Code *Raspberry Pi Pico* extension (it
 installs pico-sdk 2.2.0, Arm GCC, CMake, Ninja and picotool under `%USERPROFILE%\.pico-sdk`).
 

@@ -8,6 +8,7 @@ build/
 __pycache__/
 artifacts/
 logs/
+backups/
 .cache/
 .pytest_cache/
 *.egg-info/

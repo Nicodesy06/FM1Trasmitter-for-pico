@@ -219,6 +219,18 @@ Se la scheda esegue già il Transporter, `flash` la riavvia in BOOTSEL da solo (
 
 ## 7. Collaudo su Windows 11
 
+**Modo più semplice:** scarica il repository (anche come ZIP da GitHub), estrailo e fai doppio
+clic su **`FM1-Transporter.bat`**. Il file trova Python (se manca propone di installarlo con
+winget), installa pyserial e apre una finestra con:
+
+1. **Prepara il firmware** – scarica il loader JieLi (hash verificato) e crea l'UF2 completo;
+2. **Collaudo della scheda (fase A)** – la DollaTek da sola;
+3. **Primo contatto con l'FM-1 (fase B)** – sola lettura, backup in `backups\`;
+
+più *Porte e dischi*, *Console (20 s)* e le cartelle di log e backup. Le domande delle
+procedure compaiono come finestre Sì/No; i report vanno in `logs\`. È lo stesso codice dei
+comandi descritti sotto, che restano disponibili.
+
 Prerequisiti: Python 3.8+ (`py -3`), `pyserial` (lo script si offre di installarlo).
 Per compilare: estensione VS Code "Raspberry Pi Pico" (installa pico-sdk 2.2.0, Arm GCC, CMake,
 Ninja e picotool in `%USERPROFILE%\.pico-sdk`) oppure gli stessi strumenti a mano.

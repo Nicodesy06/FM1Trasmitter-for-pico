@@ -9,6 +9,7 @@
 # Windows scripts with Windows line endings in the working tree
 *.ps1      text eol=crlf
 *.cmd      text eol=crlf
+*.bat      text eol=crlf
 # Patches and POSIX scripts stay LF (cmake/fm1t_patch.cmake copes with CRLF anyway)
 *.patch    text eol=lf
 *.sh       text eol=lf
