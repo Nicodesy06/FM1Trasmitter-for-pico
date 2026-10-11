@@ -5,9 +5,9 @@
   "profile_validation": "BUILD VERIFIED",
   "loader": "placeholder",
   "loader_sha256": "25f62babdb1c62753f7e293338c8ee1b6f323aec9805644b794e6581e7c5bc29",
-  "build_id": "5e3e19e12b",
-  "marker_build": "5e3e19e12b",
-  "git_commit": "5e3e19e12b91c7a632200e9ac2e7f6c49a686d48",
+  "build_id": "1f7073e3c0",
+  "marker_build": "1f7073e3c0",
+  "git_commit": "1f7073e3c06a1f22540fae0c64786bb3efbbbcfe",
   "upstream": "kurogedelic/FM-1-transporter a632d923203170e3a08565f4056dbb3fd3d65ca5",
   "pico_pio_usb": "fe9133fc513b82cc3dc62c67cb51f2339cf29ef7 (0.6.1) + lib/pico-pio-usb-bulk-multi-xact.patch",
   "sdk": "pico-sdk 2.2.0",
@@ -16,34 +16,34 @@
   "cmake": "cmake version 3.28.3",
   "generator": "Ninja",
   "host": "Linux 6.18.44-fc-v114 x86_64",
-  "built_at": "2026-10-11T13:49:53+00:00",
+  "built_at": "2026-10-11T14:01:24+00:00",
   "uf2_range": "0x10000000-0x1001B300",
   "files": {
     "uf2": {
       "file": "fm1_transporter_dollatek_rp2040-placeholder.uf2",
-      "sha256": "38c704fb852f5ad16659ef87ff02fc91402d71182b820f11c4b215139f52e54c",
+      "sha256": "2665c1596525a2ae30ffeb574c4884e8ca241893a8c5b8ebd890519630161c52",
       "bytes": 222720,
       "shipped": true
     },
     "elf": {
       "file": "fm1_transporter_dollatek_rp2040-placeholder.elf",
-      "sha256": "f155a2533fb9e8424e3d72077a65af4039af645a15b01d01507f19b95025b950",
+      "sha256": "9a8625c40721c540abf8663391a272a21753359adc81c5f6ad456bc24369089b",
       "bytes": 1237664,
       "shipped": false
     },
     "bin": {
       "file": "fm1_transporter_dollatek_rp2040-placeholder.bin",
-      "sha256": "ce308d25022926f15afef92825885f50241be354230d6b6401932a4c6f42baca",
+      "sha256": "16c0019f3cd06aee41535f9f1a73b39f07cfb67713fcd1870bf083b03dfb8174",
       "bytes": 111316,
       "shipped": false
     },
     "hostonly_uf2": {
       "file": "fm1_transporter_dollatek_rp2040-hostonly-placeholder.uf2",
-      "sha256": "289d562f7621cb15c1c967b5d8e87a102509633d19f72e931072961f33854482",
+      "sha256": "9a443ecf72c4767feb253ad1861aaf8807d78fe7f13ecdec2734713b37d164b8",
       "bytes": 218112,
       "shipped": false
     }
   },
-  "spliced_uf2_sha256": "23027a565420f84ebf724105f7ad5c1ff1790e1957ff1231ab0de5f6a16460d1",
+  "spliced_uf2_sha256": "18e2c9947956bbf8e06feb0bd8708488921549e579208214203fee527c5bb6e1",
   "spliced_check": "splice(placeholder, pattern, wl82loader.bin sha256 d41da6126760c9d66660bcc0cac8d27d221806c5e369a8036921efe68dca5376) == real-loader build, byte for byte"
 }

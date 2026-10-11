@@ -5,9 +5,9 @@
   "profile_validation": "HARDWARE VERIFIED",
   "loader": "none",
   "loader_sha256": null,
-  "build_id": "5e3e19e12b",
-  "marker_build": "5e3e19e12b",
-  "git_commit": "5e3e19e12b91c7a632200e9ac2e7f6c49a686d48",
+  "build_id": "1f7073e3c0",
+  "marker_build": "1f7073e3c0",
+  "git_commit": "1f7073e3c06a1f22540fae0c64786bb3efbbbcfe",
   "upstream": "kurogedelic/FM-1-transporter a632d923203170e3a08565f4056dbb3fd3d65ca5",
   "pico_pio_usb": "fe9133fc513b82cc3dc62c67cb51f2339cf29ef7 (0.6.1) + lib/pico-pio-usb-bulk-multi-xact.patch",
   "sdk": "pico-sdk 2.2.0",
@@ -16,30 +16,30 @@
   "cmake": "cmake version 3.28.3",
   "generator": "Ninja",
   "host": "Linux 6.18.44-fc-v114 x86_64",
-  "built_at": "2026-10-11T13:51:29+00:00",
+  "built_at": "2026-10-11T14:03:04+00:00",
   "uf2_range": "0x10000000-0x10015000",
   "files": {
     "uf2": {
       "file": "fm1_transporter_xiao_rp2040-noloader.uf2",
-      "sha256": "9102bbaf471e35744d2d6a98eb6d9a27bab3ade886b6efd24cb346749eefb46e",
+      "sha256": "16083cd31b0a399a0a367f79a05edd9768d1386b7728aaff274de5df278aa511",
       "bytes": 172032,
       "shipped": true
     },
     "elf": {
       "file": "fm1_transporter_xiao_rp2040-noloader.elf",
-      "sha256": "3ec91b1e77088618d4f9c2d6f53f823b39e999bd93f5674575a7ba0fe23f1243",
+      "sha256": "092f634270c18b70ea67b35d209f540b68a7d8ead83cedbff9307bdb94ae7462",
       "bytes": 1211040,
       "shipped": false
     },
     "bin": {
       "file": "fm1_transporter_xiao_rp2040-noloader.bin",
-      "sha256": "fca8f5b7d8b317a6c6736ae79914e79e7865edcc588193fb3d694c10e9b5ec60",
+      "sha256": "98accdb21f117daa0564fe8b7f6811cfc5dd1189bb499202176c52a7a788fabe",
       "bytes": 85960,
       "shipped": false
     },
     "hostonly_uf2": {
       "file": "fm1_transporter_xiao_rp2040-hostonly-noloader.uf2",
-      "sha256": "2df4aaf028e243de186683c47b729ba09f52869da0c5aae5ba6a2c628c768f30",
+      "sha256": "2b0ec37355f90b5043a68a7b4fe717e94f19d8db2cfa107294de4e09476a7f9e",
       "bytes": 166912,
       "shipped": false
     }
