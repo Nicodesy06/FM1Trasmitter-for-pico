@@ -6,3 +6,12 @@ build/
 *.bin
 *.map
 __pycache__/
+artifacts/
+logs/
+.cache/
+.pytest_cache/
+*.egg-info/
+# shipped firmware files live in dist/ and are tracked explicitly
+!dist/**/*.uf2
+!dist/**/*.elf
+!dist/**/*.bin

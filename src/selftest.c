@@ -31,8 +31,9 @@ volatile uint32_t fm1t_key_packets;
 static const char *reset_reason = "por";
 
 // Searched for by the host tools in a UF2 before flashing it: the image must
-// carry exactly one marker, for the board the user selected.
-__attribute__((used)) static const char board_marker[] =
+// carry exactly one marker, for the board the user selected. Printed by
+// `ident` (tag=...), which also keeps the linker from dropping it.
+static const char board_marker[] =
     "FM1T-BOARD:" FM1T_BOARD_ID ";FM1T-BUILD:" FM1T_BUILD_ID ";";
 
 bi_decl(bi_program_feature("FM1T board " FM1T_BOARD_ID))
@@ -75,12 +76,11 @@ static void validation_token(char *out, size_t n) {
 static void cmd_ident(uint8_t itf) {
     char v[32], line[256];
     validation_token(v, sizeof(v));
-    (void)board_marker;
     snprintf(line, sizeof(line),
              "OK fm1t=2 fw=%s build=%s upstream=%s board=%s soc=RP2040 dp=%d dm=%d leds=%s "
-             "binary=%s validation=%s",
+             "binary=%s validation=%s tag=%s",
              FM1T_FW_VERSION, FM1T_BUILD_ID, FM1T_UPSTREAM, FM1T_BOARD_ID, FM1T_PIN_DP,
-             FM1T_PIN_DM, board_led_kind_name(), FM1T_BINARY_TYPE, v);
+             FM1T_PIN_DM, board_led_kind_name(), FM1T_BINARY_TYPE, v, board_marker);
     reply(itf, line);
 }
 

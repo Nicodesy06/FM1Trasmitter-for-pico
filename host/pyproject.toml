@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fm1-board-tool"
+version = "1.0.0"
+description = "Board profiles, build, flash and self-test for the FM-1 Transporter on RP2040 boards"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+dependencies = ["pyserial>=3.5"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+fm1-board-tool = "fm1_board_tool.cli:main"
+
+[tool.setuptools]
+packages = ["fm1_board_tool"]
