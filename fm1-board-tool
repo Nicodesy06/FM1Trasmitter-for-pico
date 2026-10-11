@@ -1,0 +1,4 @@
+#!/bin/sh
+# fm1-board-tool for Linux/macOS: runs host/fm1_board_tool with Python 3.
+HERE=$(cd "$(dirname "$0")" && pwd)
+PYTHONPATH="$HERE/host${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m fm1_board_tool "$@"

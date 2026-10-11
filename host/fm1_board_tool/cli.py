@@ -10,6 +10,7 @@
   fm1-board-tool transporter-info [--port COMx]
   fm1-board-tool console [--port COMx] [--seconds N]
   fm1-board-tool fm1-check [--dump DIR] [--wait S]
+  fm1-board-tool hwtest --board ID [--phase a|b|ab] [--uf2 FILE]
 
 `--sim BOARD` runs any command against the behavioural simulator instead of
 real ports (SIMULATED evidence only). Exit codes: 0 ok, 1 failure, 2 usage.
@@ -277,6 +278,7 @@ def cmd_fm1_check(args, env):
     """First contact with the FM-1: read-only. Waits for UBOOT by polling `diag`
     (answered by the RP2040, so nothing is queued), then status, info, and
     optionally two full reads that must be identical."""
+    from . import fm1diag
     f = _one_transporter(env, args.port)
     if not f.ident:
         raise TransporterError("legacy firmware without ident/diag; use the recovery tool's `info`")
@@ -284,58 +286,26 @@ def cmd_fm1_check(args, env):
     try:
         log.info("Waiting up to %d s for the FM-1 to enter UBOOT. FM-1 OFF -> wire D+/D-/GND -> "
                  "switch the FM-1 ON now.", args.wait)
-        deadline = time.monotonic() + args.wait
-        phase = None
-        while time.monotonic() < deadline:
-            phase = c.board_cmd("diag").get("phase")
-            if phase == "uboot":
-                break
-            time.sleep(1.0)
-        if phase != "uboot":
-            log.error("no UBOOT after %d s (last phase %s). Check the wiring and the battery; "
-                      "see the console log (fm1-board-tool console).", args.wait, phase)
+        try:
+            fm1diag.wait_uboot(c, args.wait, lambda ph, t, d: log.info("  %5.1f s  phase %s", t, ph))
+            st, info, problems = fm1diag.identify(c)
+        except fm1diag.Fm1Error as e:
+            log.error("%s. Nothing was written. See the console log (fm1-board-tool console).", e)
             return 1
-        st = c.status(10)
         log.info("status   %s", " ".join("%s=%s" % kv for kv in st.items()))
-        if st.get("loader") != "1":
-            log.error("this firmware has no JieLi loader (-noloader build): info/read impossible. "
-                      "Flash the make-firmware output.")
-            return 1
-        info = c.info()
         log.info("info     %s", " ".join("%s=%s" % kv for kv in info.items()))
-        problems = check_fm1_info(info)
         if problems:
             log.error("NOT an FM-1 as expected: %s. Stop here; nothing was written.", "; ".join(problems))
             return 1
         log.info("chip key 980F and flash 856014: an FM-1 (JieLi WL82) in UBOOT. Nothing was written.")
         if not args.dump:
             return 0
-        reads = []
-        for i in (1, 2):
-            t0 = time.monotonic()
-            d = c.read(0, FM1_FLASH_SIZE)
-            log.info("read %d/2: sha256 %s (%.1f s)", i, hashlib.sha256(d).hexdigest(), time.monotonic() - t0)
-            reads.append(d)
-        if reads[0] != reads[1]:
-            bad = [a for a in range(0, FM1_FLASH_SIZE, 4096) if reads[0][a:a + 4096] != reads[1][a:a + 4096]]
-            log.error("the two reads DIFFER in %d sectors (first %s): unreliable link. Nothing saved; "
-                      "check wiring length and GND.", len(bad), ", ".join("0x%05X" % a for a in bad[:8]))
+        try:
+            side = fm1diag.double_dump(c, Path(args.dump), f.ident, env.evidence, info)
+        except fm1diag.Fm1Error as e:
+            log.error("%s", e)
             return 1
-        out = Path(args.dump)
-        out.mkdir(parents=True, exist_ok=True)
-        stem = "fm1-dump-%s" % _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
-        binp = out / (stem + ".bin")
-        with open(binp, "xb") as fh:
-            fh.write(reads[0])
-        if binp.read_bytes() != reads[0]:
-            log.error("the dump file does not read back correctly")
-            return 1
-        side = {"file": binp.name, "bytes": len(reads[0]), "sha256": hashlib.sha256(reads[0]).hexdigest(),
-                "crc32": "%08X" % (zlib.crc32(reads[0]) & 0xFFFFFFFF), "double_read": True,
-                "reads_identical": True, "info": info, "transporter": f.ident,
-                "evidence": env.evidence, "saved": _dt.datetime.now().astimezone().isoformat(timespec="seconds")}
-        (out / (stem + ".json")).write_text(json.dumps(side, indent=2), encoding="utf-8")
-        log.info("Saved %s (sha256 %s) and %s.json. Keep both.", binp, side["sha256"], stem)
+        log.info("Saved %s (sha256 %s) and its .json record. Keep both.", side["path"], side["sha256"])
         return 0
     finally:
         c.close()
@@ -421,10 +391,34 @@ def build_parser():
     p.add_argument("--port")
     p.add_argument("--wait", type=int, default=120)
     p.add_argument("--dump", metavar="DIR", help="read the 1 MiB flash twice and save it if identical")
+    p = sub.add_parser("hwtest", help="guided hardware test: A = board alone, B = first read-only FM-1 contact")
+    p.add_argument("--board", required=True)
+    p.add_argument("--phase", choices=("a", "b", "ab"), default="a")
+    p.add_argument("--uf2", help="UF2 to flash in phase A (default: artifacts/ or dist/ for the board)")
+    p.add_argument("--no-flash", action="store_true", help="board already runs the Transporter firmware")
+    p.add_argument("--dump-dir", default="backups")
+    p.add_argument("--wait", type=int, default=120)
+    p.add_argument("--allow-unvalidated", action="store_true")
     return ap
 
 
-COMMANDS = {"list": cmd_list, "probe": cmd_probe, "transporter-info": cmd_transporter_info,
+def cmd_hwtest(args, env):
+    from . import hwtest
+    p = prof.get_profile(args.board, allow_disabled=args.allow_unvalidated)
+    env.interactive = True
+    uf2 = Path(args.uf2) if args.uf2 else None
+    if args.phase in ("a", "ab") and not uf2 and not args.no_flash:
+        uf2 = default_uf2(p)
+        if not uf2:
+            raise SystemExit("hwtest: no UF2 for %s; pass --uf2 or --no-flash" % p.id)
+    rep = hwtest.run(env, p, uf2=None if args.no_flash else uf2, phases=args.phase,
+                     dump_dir=Path(args.dump_dir), logdir=Path(args.logdir), wait=args.wait)
+    print()
+    print(rep.markdown())
+    return 1 if rep.failed or rep.meta.get("stopped") else 0
+
+
+COMMANDS = {"hwtest": cmd_hwtest, "list": cmd_list, "probe": cmd_probe, "transporter-info": cmd_transporter_info,
             "console": cmd_console, "build": cmd_build, "make-firmware": cmd_make_firmware,
             "flash": cmd_flash, "selftest": cmd_selftest, "fm1-check": cmd_fm1_check}
 

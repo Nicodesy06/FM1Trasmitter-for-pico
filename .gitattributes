@@ -1,0 +1,15 @@
+# Firmware images and blobs: never touched by line-ending conversion
+# (a Windows checkout with core.autocrlf=true would otherwise be able to
+# change their bytes and break the recorded SHA-256 values).
+*.uf2      binary
+*.bin      binary
+*.elf      binary
+*.pattern  binary
+*.fwsc     binary
+# Windows scripts with Windows line endings in the working tree
+*.ps1      text eol=crlf
+*.cmd      text eol=crlf
+# Patches and POSIX scripts stay LF (cmake/fm1t_patch.cmake copes with CRLF anyway)
+*.patch    text eol=lf
+*.sh       text eol=lf
+fm1-board-tool text eol=lf
