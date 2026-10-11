@@ -12,6 +12,7 @@
 #include "jieli_uboot.h"
 #include "log.h"
 #include "pio_host.h"
+#include "selftest.h"
 
 #define DATA_ITF 1
 #define TX_SIZE 16384           // power of two
@@ -76,6 +77,8 @@ void fm1_proto_rx(const char *buf, unsigned len) {
             tud_cdc_n_write_flush(DATA_ITF);
             continue;
         }
+        // Board identification / self-test, answered here like ping (selftest.h).
+        if (fm1t_selftest_command(rx_line, DATA_ITF)) continue;
         if (req_pending) continue;      // one request at a time; drop extras
         memcpy(req, rx_line, sizeof(req));
         if (!strncmp(rx_line, "wsec ", 5)) {

@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "id": "generic_rp2040",
+  "name": "Generic Pico-compatible RP2040 (experimental)",
+  "role": "experimental",
+  "enabled": false,
+  "soc": "RP2040",
+  "uf2_name": "fm1_transporter_generic_rp2040.uf2",
+  "pico_board": "fm1t_generic_rp2040",
+  "pico_board_header": "boards/include",
+  "binary_type": "copy_to_ram",
+  "validation": {
+    "level": "UNVALIDATED",
+    "source": "none: template for boards whose pinout has not been checked",
+    "verified": [],
+    "pending": ["pinout", "boot", "cdc", "usb_key", "pio_usb_host", "jieli_rom_id", "flash_read"]
+  },
+  "usb_pio": {
+    "dp": 0,
+    "dm": 1,
+    "pinout": "DPDM",
+    "recovery_pio": 0,
+    "host_pio": 1,
+    "labels": {"dp": "GP0", "dm": "GP1", "gnd": "any GND"}
+  },
+  "ground_reference": ["any GND pin"],
+  "leds": {"kind": "none", "verified": false},
+  "reserved_gpios": {},
+  "flash": {
+    "declared_bytes": 2097152,
+    "build_bytes": 2097152,
+    "boot2": "generic_03h",
+    "spi_clkdiv": 4,
+    "verified": false
+  },
+  "clock": {"xosc_hz": 12000000, "sys_khz": 120000, "xosc_startup_delay_multiplier": 64},
+  "bootsel": {"boot_button": true, "reset_button": false, "label": "BOOT"},
+  "notes": [
+    "Disabled: builds only with -DFM1T_ALLOW_UNVALIDATED=ON. No LED is driven; only GP0/GP1 are touched.",
+    "To support a new board, copy this file, check the pinout against the board's schematic, and add it as its own profile."
+  ]
+}

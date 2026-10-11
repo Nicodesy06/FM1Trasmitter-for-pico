@@ -3,8 +3,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// FM-1-facing PIO USB host (TinyUSB rhport 1, Pico-PIO-USB on PIO1,
-// GP0 = D+, GP1 = D-). Runs entirely on core 1, after recovery.
+// FM-1-facing PIO USB host (TinyUSB rhport 1, Pico-PIO-USB on the host PIO,
+// PIO1; D+ = PIN_DP, D- = PIN_DP + 1 from the board profile, GP0/GP1 on every
+// current profile). Runs entirely on core 1, after recovery.
 //
 // M0 scope: enumerate the JieLi ROM UBOOT, log its descriptors and run a
 // read-only SCSI INQUIRY over Bulk-Only Transport. No memory or flash

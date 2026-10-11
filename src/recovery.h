@@ -3,11 +3,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// Seeed XIAO RP2040: GP0/D6 -> FM-1 D+, GP1/D7 -> FM-1 D-, GND -> GND.
-#define PIN_DP 0
-#define PIN_DM 1
+// FM-1 D+ / D- pins (PIN_DP, PIN_DM) and the status LED come from the board
+// profile: see board.h. XIAO RP2040: GP0/D6 -> D+, GP1/D7 -> D-, GND -> GND.
+#include "board.h"
 
-// Claims PIO0 state machines and leaves the target bus released.
+// Claims the recovery PIO's (PIO0) state machines and leaves the target bus released.
 void recovery_init(void);
 
 // True if something already pulls D+ up at boot: a running FM-1 application,
@@ -32,4 +32,4 @@ void recovery_run(void);
 // takes the pins.
 void recovery_release_bus(void);
 
-void rgb(bool r, bool g, bool b);
+// rgb() (status LED) is declared in board.h.

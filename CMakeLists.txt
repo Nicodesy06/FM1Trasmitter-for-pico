@@ -1,4 +1,8 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.19)
+
+# Board profile (boards/<id>.json) -> PICO_BOARD, pins, LEDs. Must come before
+# the SDK import. See cmake/fm1t_board.cmake.
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/fm1t_board.cmake)
 
 # Pico-PIO-USB is vendored as a submodule, pinned to the release TinyUSB in
 # the SDK expects. The build uses a patched copy in the build directory
@@ -48,6 +52,7 @@ else()
     set(FM1T_HAVE_LOADER 0)
     message(WARNING "FM-1 Transporter: ${FM1T_LOADER_BIN} not found; building without the flash loader")
 endif()
+fm1t_write_board_config(${FM1T_GEN_DIR})
 
 function(fm1t_add_firmware TARGET)
     add_executable(${TARGET}
@@ -58,6 +63,10 @@ function(fm1t_add_firmware TARGET)
         src/log.c
         src/jieli_uboot.c
         src/transporter_proto.c
+        src/board.c
+        src/flash_info.c
+        src/flash_sfdp.c
+        src/selftest.c
     )
 
     pico_generate_pio_header(${TARGET}
@@ -66,6 +75,7 @@ function(fm1t_add_firmware TARGET)
 
     # tusb_config.h, generated wl82loader.h
     target_include_directories(${TARGET} PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src ${FM1T_GEN_DIR})
+    fm1t_apply_board(${TARGET})
     target_compile_definitions(${TARGET} PRIVATE FM1T_HAVE_LOADER=${FM1T_HAVE_LOADER})
 
     target_link_libraries(${TARGET}
@@ -77,6 +87,8 @@ function(fm1t_add_firmware TARGET)
         hardware_gpio
         hardware_clocks
         hardware_dma
+        hardware_flash
+        hardware_sync
         tinyusb_device
         tinyusb_host
         tinyusb_pico_pio_usb
@@ -92,6 +104,16 @@ endfunction()
 
 # M0 firmware: USB_KEY recovery -> PIO USB host.
 fm1t_add_firmware(fm1_transporter)
+
+# Board-named copies of the outputs, e.g. fm1_transporter_dollatek_rp2040.uf2.
+get_filename_component(FM1T_OUT_STEM ${FM1T_UF2_NAME} NAME_WE)
+add_custom_command(TARGET fm1_transporter POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy fm1_transporter.uf2 ${FM1T_OUT_STEM}.uf2
+    COMMAND ${CMAKE_COMMAND} -E copy fm1_transporter.elf ${FM1T_OUT_STEM}.elf
+    COMMAND ${CMAKE_COMMAND} -E copy fm1_transporter.bin ${FM1T_OUT_STEM}.bin
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    BYPRODUCTS ${FM1T_OUT_STEM}.uf2 ${FM1T_OUT_STEM}.elf ${FM1T_OUT_STEM}.bin
+    VERBATIM)
 
 # Host bring-up firmware: PIO USB host only, no USB_KEY.
 fm1t_add_firmware(fm1_transporter_hostonly)

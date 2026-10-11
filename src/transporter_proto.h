@@ -6,6 +6,8 @@
 // a raw binary payload:
 //
 //   ping                  -> PONG
+//   ident, hwinfo, diag, piotest, ledtest, reboot, bootsel
+//                         -> board identification / self-test, see selftest.h
 //   status                -> OK uboot=<0|1> v15=<0|1> loader=<0|1>
 //   uboot                 -> OK uboot | OK softkey | ERR no-v15
 //                            (soft key: stock V15 -> mask ROM UBOOT1.00)

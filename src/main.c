@@ -1,5 +1,6 @@
 // FM-1 Transporter - USB_KEY recovery + PIO USB host for the JieLi UBOOT
-// Seeed XIAO RP2040: GP0/D6 -> FM-1 D+, GP1/D7 -> FM-1 D-, GND -> GND.
+// Board pins come from the board profile (boards/<id>.json, board.h); on every
+// current profile GP0 -> FM-1 D+, GP1 -> FM-1 D-, GND -> GND.
 // FM-1 VBUS is not connected in the current battery-powered prototype.
 //
 // core 0: native USB device (Mac-facing CDC console) and log output
@@ -17,9 +18,12 @@
 #include "hardware/watchdog.h"
 #include "tusb.h"
 
+#include "board.h"
+#include "flash_info.h"
 #include "log.h"
 #include "pio_host.h"
 #include "recovery.h"
+#include "selftest.h"
 #include "transporter_proto.h"
 
 #define CONSOLE_WAIT_MS 10000
@@ -36,13 +40,26 @@ void fm1_rekey(void) {
 static volatile bool console_ready;
 
 static void core1_main(void) {
+    fm1t_phase = FM1T_PHASE_WAIT_CONSOLE;
     for (int i = 0; i < CONSOLE_WAIT_MS / 100 && !console_ready; i++) {
         sleep_ms(100);
     }
     sleep_ms(200);
 
-    printf("\nFM-1 Transporter\n");
-    printf("XIAO RP2040: D+=GP0/D6 D-=GP1/D7, PIO host on PIO1\n");
+    printf("\nFM-1 Transporter %s (build %s, upstream %s)\n", FM1T_FW_VERSION, FM1T_BUILD_ID,
+           FM1T_UPSTREAM);
+    printf("Board %s (%s), validation: %s\n", FM1T_BOARD_ID, FM1T_BOARD_NAME,
+           FM1T_BOARD_VALIDATION);
+    printf("FM-1 D+=%s D-=%s, recovery on PIO%d, PIO host on PIO%d, LEDs: %s, reset: %s\n",
+           FM1T_LABEL_DP, FM1T_LABEL_DM, FM1T_RECOVERY_PIO, FM1T_HOST_PIO,
+           board_led_kind_name(), fm1t_reset_reason());
+    const fm1t_flash_info_t *fi = fm1t_flash_info();
+    if (fi->jedec_ok) {
+        printf("Board flash (RP2040 side, not the FM-1): JEDEC %02X%02X%02X, SFDP %llu bytes\n",
+               fi->jedec[0], fi->jedec[1], fi->jedec[2], (unsigned long long)fi->sfdp_bytes);
+    } else {
+        printf("Board flash (RP2040 side, not the FM-1): JEDEC ID not readable\n");
+    }
     printf("If the FM-1 runs stock V15, leave it on: fm1t enters UBOOT via the soft key.\n");
     printf("Otherwise switch it OFF, and ON again once the key is running.\n");
 
@@ -115,9 +132,13 @@ void tud_cdc_rx_cb(uint8_t itf) {
 int main(void) {
     // Pico-PIO-USB needs clk_sys to be a multiple of 12 MHz. The recovery
     // PIO dividers are derived from clk_sys, so they follow automatically.
-    set_sys_clock_khz(120000, true);
+    fm1t_selftest_init();
+    set_sys_clock_khz(FM1T_SYS_KHZ, true);
 
     log_init();
+    // The board's own QSPI flash, read before USB and core 1 start (XIP builds
+    // run from it). Identification only; the RP2040 flash is never written.
+    fm1t_flash_probe();
     tud_init(0);
 
     multicore_launch_core1(core1_main);
@@ -127,5 +148,6 @@ int main(void) {
         console_ready = tud_cdc_n_connected(0);
         log_drain();
         fm1_proto_drain();
+        board_led_test_poll();
     }
 }

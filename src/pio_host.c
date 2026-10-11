@@ -14,6 +14,7 @@
 #include "log.h"
 #include "jieli_uboot.h"
 #include "recovery.h"
+#include "selftest.h"
 #include "transporter_proto.h"
 
 #define HOST_RHPORT 1
@@ -59,9 +60,10 @@ static CFG_TUSB_MEM_ALIGN msc_csw_t csw;
 void fm1_pio_host_start(void) {
     pio_usb_configuration_t cfg = PIO_USB_DEFAULT_CONFIG;
     cfg.pin_dp = PIN_DP;
+    cfg.pinout = PIO_USB_PINOUT_DPDM;   // D- = D+ + 1, checked in board.h
     // PIO0 holds the recovery programs; give the host all of PIO1.
-    cfg.pio_tx_num = 1;
-    cfg.pio_rx_num = 1;
+    cfg.pio_tx_num = FM1T_HOST_PIO;
+    cfg.pio_rx_num = FM1T_HOST_PIO;
     // pio_usb claims tx_ch itself and panics if it is taken.
     int ch = dma_claim_unused_channel(true);
     dma_channel_unclaim(ch);
@@ -71,6 +73,7 @@ void fm1_pio_host_start(void) {
     tuh_init(HOST_RHPORT);
 
     host_start_us = last_status_us = unmounted_since_us = time_us_64();
+    fm1t_phase = FM1T_PHASE_HOST;
 }
 
 bool fm1_pio_host_mounted(void) {
@@ -120,6 +123,7 @@ void tuh_mount_cb(uint8_t daddr) {
     dlog("HOST: device mounted, addr=%u (%.1f ms after host start)", daddr,
          (time_us_64() - host_start_us) / 1000.0);
     mounted_addr = daddr;
+    fm1t_phase = FM1T_PHASE_MOUNTED;
     mount_us = time_us_64();
     watchdog_hw->scratch[REATTACH_SCRATCH] = 0;
     uboot_ready = false;
@@ -131,6 +135,7 @@ void tuh_umount_cb(uint8_t daddr) {
     dlog("HOST: device addr=%u detached (%.1f ms after mount)", daddr,
          (time_us_64() - mount_us) / 1000.0);
     mounted_addr = 0;
+    fm1t_phase = FM1T_PHASE_HOST;
     uboot_ready = false;
     mounted_is_v15 = false;
     unmounted_since_us = time_us_64();
@@ -477,6 +482,7 @@ void fm1_pio_host_task(void) {
         if (probe_inquiry(daddr)) {
             inquiry_tries = 0;
             uboot_ready = true;
+            fm1t_phase = FM1T_PHASE_UBOOT;
             rgb(false, true, false);
             dlog("UBOOT READY: enumerated and answered INQUIRY via the PIO host.");
         } else if (!mounted_addr) {

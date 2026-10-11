@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "xiao_rp2040",
+  "name": "Seeed Studio XIAO RP2040",
+  "role": "reference",
+  "enabled": true,
+  "soc": "RP2040",
+  "uf2_name": "fm1_transporter_xiao_rp2040.uf2",
+  "pico_board": "seeed_xiao_rp2040",
+  "pico_board_header": "sdk",
+  "binary_type": "default",
+  "validation": {
+    "level": "HARDWARE VERIFIED",
+    "source": "upstream kurogedelic/FM-1-transporter a632d92 and MvaveFM1Unbricker TRANSPORTER-GUIDE.md (unit recovered 2026-10-09)",
+    "verified": ["boot", "cdc", "usb_key", "pio_usb_host", "jieli_rom_id", "flash_read", "flash_write"],
+    "pending": []
+  },
+  "usb_pio": {
+    "dp": 0,
+    "dm": 1,
+    "pinout": "DPDM",
+    "recovery_pio": 0,
+    "host_pio": 1,
+    "labels": {"dp": "D6 (GP0)", "dm": "D7 (GP1)", "gnd": "GND (2nd pin from USB-C, 5V side)"}
+  },
+  "ground_reference": ["GND pad next to 5V (2nd pin from the USB-C end)"],
+  "leds": {
+    "kind": "rgb",
+    "verified": true,
+    "red":   {"gpio": 17, "active_low": true},
+    "green": {"gpio": 16, "active_low": true},
+    "blue":  {"gpio": 25, "active_low": true}
+  },
+  "reserved_gpios": {
+    "11": "WS2812 power enable (not used by the Transporter)",
+    "12": "WS2812 data (not used by the Transporter)"
+  },
+  "flash": {
+    "declared_bytes": 2097152,
+    "build_bytes": 2097152,
+    "boot2": "sdk-board-default (w25q080)",
+    "verified": true
+  },
+  "clock": {"xosc_hz": 12000000, "sys_khz": 120000},
+  "bootsel": {"boot_button": true, "reset_button": true, "label": "B (BOOT) / R (RESET)"},
+  "notes": [
+    "Upstream reference board. The build is the upstream configuration: SDK board seeed_xiao_rp2040, XIP from flash, LED pins and polarity as in upstream recovery.c."
+  ]
+}

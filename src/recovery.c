@@ -21,11 +21,8 @@
 #include "hardware/gpio.h"
 
 #include "log.h"
+#include "selftest.h"
 #include "usb_key.pio.h"
-
-#define LED_R 17
-#define LED_G 16
-#define LED_B 25
 
 #define USB_KEY_WORD 0x16EF
 #define PIO_HZ 1000000
@@ -39,14 +36,12 @@
 #define HANDOFF_PULSE_MS 6000       // matches every proven run; try lower once M0 works
 #define CAL_DONE_MIN_MS 1000        // a D+ drop after this long under pulses = calibration done
 
+#if FM1T_RECOVERY_PIO == 0
 static PIO pio = pio0;
+#else
+static PIO pio = pio1;
+#endif
 static uint sm_key, sm_sof, off_key, off_sof;
-
-void rgb(bool r, bool g, bool b) {
-    gpio_put(LED_R, !r);
-    gpio_put(LED_G, !g);
-    gpio_put(LED_B, !b);
-}
 
 static void pad_setup(uint pin, enum gpio_drive_strength ds) {
     gpio_set_drive_strength(pin, ds);
@@ -184,6 +179,7 @@ static bool wait_dp_high(uint32_t timeout_ms) {
 //   - D+ held high for HANDOFF_PULSE_MS (the 6 s pattern from earlier runs).
 static void pulse_phase(void) {
     dlog("PULSE: D+ high (ROM pull-up), sending 4 us pulses every 1 ms");
+    fm1t_phase = FM1T_PHASE_PULSES;
     pulse_start();
 
     uint64_t start = time_us_64();
@@ -223,6 +219,7 @@ void recovery_run(void) {
     uint64_t last_blink = start;
     bool blink = false;
 
+    fm1t_phase = FM1T_PHASE_KEYING;
     key_start();
     dlog("KEY: sending 0x%04X, polarity A (D+ clock, D- data). Switch the FM-1 ON now.",
          USB_KEY_WORD);
@@ -230,6 +227,7 @@ void recovery_run(void) {
     for (;;) {
         key_send_packet();
         packets++;
+        fm1t_key_packets = packets;
 
         int s = gap_sense(PIN_DM, &alive);
 
@@ -252,6 +250,7 @@ void recovery_run(void) {
 
             dlog("no D+ pull-up within %d ms (D+=%d D-=%d) - false ACK, resuming key",
                  DP_HIGH_TIMEOUT_MS, dp(), dm());
+            fm1t_phase = FM1T_PHASE_KEYING;
             alive = false;
             was_alive = false;
             key_start();
@@ -297,17 +296,13 @@ bool recovery_target_attached(void) {
 
 void recovery_pulses_only(uint32_t ms) {
     dlog("PULSE: %lu ms of 1 ms pulses for an already attached target", (unsigned long)ms);
+    fm1t_phase = FM1T_PHASE_PULSES;
     pulse_start();
     sleep_ms(ms);
 }
 
 void recovery_init(void) {
-    gpio_init(LED_R);
-    gpio_set_dir(LED_R, GPIO_OUT);
-    gpio_init(LED_G);
-    gpio_set_dir(LED_G, GPIO_OUT);
-    gpio_init(LED_B);
-    gpio_set_dir(LED_B, GPIO_OUT);
+    board_leds_init();
     rgb(false, false, false);
 
     gpio_init(PIN_DP);

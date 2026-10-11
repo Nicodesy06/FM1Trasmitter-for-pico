@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "id": "pico_rp2040",
+  "name": "Raspberry Pi Pico (RP2040)",
+  "role": "secondary",
+  "enabled": true,
+  "soc": "RP2040",
+  "uf2_name": "fm1_transporter_pico_rp2040.uf2",
+  "pico_board": "pico",
+  "pico_board_header": "sdk",
+  "binary_type": "default",
+  "validation": {
+    "level": "BUILD VERIFIED",
+    "source": "Raspberry Pi Pico datasheet pinout; no physical board tested in this port",
+    "verified": [],
+    "pending": ["boot", "cdc", "usb_key", "pio_usb_host", "jieli_rom_id", "flash_read"]
+  },
+  "usb_pio": {
+    "dp": 0,
+    "dm": 1,
+    "pinout": "DPDM",
+    "recovery_pio": 0,
+    "host_pio": 1,
+    "labels": {"dp": "GP0 (pin 1)", "dm": "GP1 (pin 2)", "gnd": "GND (pin 3)"}
+  },
+  "ground_reference": ["pin 3", "pin 8", "pin 13", "pin 18", "pin 23", "pin 28", "pin 33", "pin 38"],
+  "leds": {
+    "kind": "mono",
+    "verified": true,
+    "mono": {"gpio": 25, "active_low": false}
+  },
+  "reserved_gpios": {
+    "23": "SMPS power-save control (on-board)",
+    "24": "VBUS sense (on-board)",
+    "29": "VSYS/3 ADC (on-board)"
+  },
+  "flash": {
+    "declared_bytes": 2097152,
+    "build_bytes": 2097152,
+    "boot2": "sdk-board-default (w25q080)",
+    "verified": true
+  },
+  "clock": {"xosc_hz": 12000000, "sys_khz": 120000},
+  "bootsel": {"boot_button": true, "reset_button": false, "label": "BOOTSEL"},
+  "notes": [
+    "Pico W is NOT covered: its GP25 is the wireless chip's SPI chip-select, not an LED."
+  ]
+}

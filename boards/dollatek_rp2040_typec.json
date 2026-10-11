@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "id": "dollatek_rp2040_typec",
+  "name": "DollaTek RP2040 Core Board TYPE-C USB-C (sold as 16M)",
+  "role": "primary",
+  "enabled": true,
+  "soc": "RP2040",
+  "uf2_name": "fm1_transporter_dollatek_rp2040.uf2",
+  "pico_board": "fm1t_dollatek_rp2040_typec",
+  "pico_board_header": "boards/include",
+  "binary_type": "copy_to_ram",
+  "validation": {
+    "level": "BUILD VERIFIED",
+    "source": "seller listing and the user's photo of the board; no physical board tested yet",
+    "verified": [],
+    "pending": ["boot", "cdc", "flash_jedec", "led_gp25", "usb_key", "pio_usb_host", "jieli_rom_id", "flash_read"]
+  },
+  "usb_pio": {
+    "dp": 0,
+    "dm": 1,
+    "pinout": "DPDM",
+    "recovery_pio": 0,
+    "host_pio": 1,
+    "labels": {"dp": "GP0 (left edge, pin 1 from the USB-C end)", "dm": "GP1 (left edge, pin 2)", "gnd": "GND (left edge, pin 3)"}
+  },
+  "ground_reference": ["left edge pin 3 (GND, between GP1 and GP2)", "left edge pin 8 (GND, between GP5 and GP6)"],
+  "leds": {
+    "kind": "mono",
+    "verified": false,
+    "mono": {"gpio": 25, "active_low": false}
+  },
+  "reserved_gpios": {
+    "23": "unknown on this board: on YD-RP2040-style boards it drives the central RGB (WS2812) LED; never driven",
+    "24": "unknown on this board: on YD-RP2040-style boards it is the USR button; never driven"
+  },
+  "flash": {
+    "declared_bytes": 16777216,
+    "build_bytes": 2097152,
+    "boot2": "generic_03h",
+    "spi_clkdiv": 4,
+    "verified": false
+  },
+  "clock": {"xosc_hz": 12000000, "sys_khz": 120000, "xosc_startup_delay_multiplier": 64},
+  "bootsel": {"boot_button": true, "reset_button": true, "label": "BOOT / RST"},
+  "notes": [
+    "Flash: the declared 16 MB is not trusted. boot2 is the slow but universal generic_03h, the image is linked for 2 MB and runs from RAM (copy_to_ram), so neither the flash chip nor its size affects timing. The firmware reads the real JEDEC ID and SFDP size at boot and reports them (fm1-board-tool probe).",
+    "LED: GP25 according to the photo; polarity assumed active-high and unverified. The firmware works the same with the LED absent or inverted (build with -DFM1T_LEDS=OFF to leave GP25 untouched).",
+    "The central RGB component is not used. Its interface (WS2812 on GP23 on similar boards) is not assumed."
+  ]
+}
