@@ -1,0 +1,202 @@
+
+### opened /dev/cu.usbmodem112301
+Chip Version B2
+sizeof(hw_endpoint_t) = 32
+  Open EP 81 with Size = 8
+  Allocated 64 bytes (0x50100180)
+  Open EP 02 with Size = 64
+  Allocated 128 bytes (0x501001C0)
+  Open EP 82 with Size = 64
+  Allocated 128 bytes (0x50100240)
+  Bind EP 81 to driver id 1
+  Bind EP 02 to driver id 1
+  Bind EP 82 to driver id 1
+
+FM-1 Transporter M0
+XIAO RP2040: D+=GP0/D6 D-=GP1/D7, PIO host on PIO1
+Keep the FM-1 switched OFF until told, then switch it ON.
+[   800895 us] KEY: sending 0x16EF, polarity A (D+ clock, D- data). Switch the FM-1 ON now.
+[   801599 us] data line probe responds (not proof of a target)
+[  2801016 us] KEY: 4070 packets
+[  4801386 us] KEY: 8141 packets
+[  6801786 us] KEY: 12212 packets
+[  8802172 us] KEY: 16283 packets
+[ 10802564 us] KEY: 20354 packets
+[ 12802938 us] KEY: 24425 packets
+[ 14803359 us] KEY: 28496 packets
+[ 16803761 us] KEY: 32567 packets
+[ 18804114 us] KEY: 36638 packets
+[ 20804485 us] KEY: 40709 packets
+[ 22804854 us] KEY: 44780 packets
+[ 24805262 us] KEY: 48851 packets
+[ 26805612 us] KEY: 52922 packets
+[ 28806001 us] KEY: 56993 packets
+[ 30806432 us] KEY: 61064 packets
+[ 32604858 us] ACK (data line held low) after 64724 packets
+[ 32606836 us] PULSE: D+ high (ROM pull-up), sending 4 us pulses every 1 ms
+[ 32614298 us] PULSE: early D+ blip at 7.3 ms, ignored
+[ 38607008 us] PULSE: 6000 ms of pulses, D+=1 - handing off
+USBH init on controller 1, speed = Full
+sizeof(usbh_device_t) = 344
+sizeof(hcd_event_t) = 12
+sizeof(_ctrl_xfer) = 16
+sizeof(tuh_xfer_t) = 24
+sizeof(tu_fifo_t) = 20
+sizeof(tu_edpt_stream_t) = 36
+[ 38608182 us] HANDOFF: pulses stopped, PIO host started in 1076 us
+[1:] USBH Device Attach
+Full Speed
+[1:0] Open EP0 with Size = 8
+Get 8 byte of Device Descriptor
+[1:0] Get Descriptor: 80 06 00 01 00 00 08 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 8 bytes: OK
+[1:0] Control data:
+  0000:  12 01 10 01 00 00 00 40                          |.......@|
+on EP 00 with 0 bytes: OK
+
+Set Address = 1
+[1:0] Set Address: 00 05 01 00 00 00 00 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 0 bytes: OK
+
+[1:1] Open EP0 with Size = 64
+Get Device Descriptor
+[1:1] Get Descriptor: 80 06 00 01 00 00 12 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 18 bytes: OK
+[1:1] Control data:
+  0000:  12 01 10 01 00 00 00 40 4A 4C 57 80 00 03 01 02  |.......@JLW.....|
+  0010:  00 01                                            |..|
+on EP 00 with 0 bytes: OK
+
+Get Configuration[0] Descriptor (9 bytes)
+[1:1] Get Descriptor: 80 06 00 02 00 00 09 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 9 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8                       |.. ......|
+on EP 00 with 0 bytes: OK
+
+Get Configuration[0] Descriptor
+[1:1] Get Descriptor: 80 06 00 02 00 00 20 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 32 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8 09 04 00 00 02 08 06  |.. .............|
+  0010:  50 00 07 05 81 02 40 00 01 07 05 01 02 40 00 01  |P.....@......@..|
+on EP 00 with 0 bytes: OK
+
+Set Configuration = 1
+[1:1] Set Configuration: 00 09 01 00 00 00 00 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 0 bytes: OK
+[1] Aborted transfer on EP 01
+[1] Aborted transfer on EP 81
+[1] Aborted transfer on EP 02
+[1] Aborted transfer on EP 82
+[1] Aborted transfer on EP 03
+[1] Aborted transfer on EP 83
+[1] Aborted transfer on EP 04
+[1] Aborted transfer on EP 84
+[1] Aborted transfer on EP 05
+[1] Aborted transfer on EP 85
+[1] Aborted transfer on EP 06
+[1] Aborted transfer on EP 86
+[1] Aborted transfer on EP 07
+[1] Aborted transfer on EP 87
+[1] Aborted transfer on EP 08
+[1] Aborted transfer on EP 88
+[1] Aborted transfer on EP 09
+[1] Aborted transfer on EP 89
+[1] Aborted transfer on EP 0A
+[1] Aborted transfer on EP 8A
+[1] Aborted transfer on EP 0B
+[1] Aborted transfer on EP 8B
+[1] Aborted transfer on EP 0C
+[1] Aborted transfer on EP 8C
+[1] Aborted transfer on EP 0D
+[1] Aborted transfer on EP 8D
+[1] Aborted transfer on EP 0E
+[1] Aborted transfer on EP 8E
+[1] Aborted transfer on EP 0F
+[1] Aborted transfer on EP 8F
+
+Device configured
+Parsing Configuration descriptor (wTotalLength = 32)
+[ 39130269 us] HOST: device mounted, addr=1 (522.1 ms after host start)
+[1:1] Get Descriptor: 80 06 00 01 00 00 12 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 18 bytes: OK
+[1:1] Control data:
+  0000:  12 01 10 01 00 00 00 40 4A 4C 57 80 00 03 01 02  |.......@JLW.....|
+  0010:  00 01                                            |..|
+on EP 00 with 0 bytes: OK
+
+[ 39133273 us] DEVICE DESCRIPTOR OK
+[ 39133329 us]   VID=4C4A PID=8057 bcdDevice=0300 bcdUSB=0110
+[ 39133429 us]   class=00/00/00 ep0=64 configs=1
+[1:1] Get Descriptor: 80 06 01 03 09 04 80 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 28 bytes: OK
+[1:1] Control data:
+  0000:  1C 03 57 00 4C 00 38 00 30 00 55 00 42 00 4F 00  |..W.L.8.0.U.B.O.|
+  0010:  4F 00 54 00 31 00 2E 00 30 00 30 00              |O.T.1...0.0.|
+on EP 00 with 0 bytes: OK
+
+[ 39137279 us]   manufacturer: "WL80UBOOT1.00"
+[1:1] Get Descriptor: 80 06 02 03 09 04 80 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 28 bytes: OK
+[1:1] Control data:
+  0000:  1C 03 57 00 4C 00 38 00 30 00 55 00 42 00 4F 00  |..W.L.8.0.U.B.O.|
+  0010:  4F 00 54 00 31 00 2E 00 30 00 30 00              |O.T.1...0.0.|
+on EP 00 with 0 bytes: OK
+
+[ 39141274 us]   product: "WL80UBOOT1.00"
+[1:1] Get Descriptor: 80 06 00 02 00 00 09 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 9 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8                       |.. ......|
+on EP 00 with 0 bytes: OK
+
+[1:1] Get Descriptor: 80 06 00 02 00 00 20 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 32 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8 09 04 00 00 02 08 06  |.. .............|
+  0010:  50 00 07 05 81 02 40 00 01 07 05 01 02 40 00 01  |P.....@......@..|
+on EP 00 with 0 bytes: OK
+
+[ 39148263 us] CONFIGURATION DESCRIPTOR (32 bytes), bConfigurationValue=1
+[ 39148366 us]   interface 0 alt 0: class=08/06/50 endpoints=2
+[ 39148475 us]     endpoint 81 attr=02 maxpacket=64 interval=1
+[ 39148569 us]     endpoint 01 attr=02 maxpacket=64 interval=1
+  Open EP 01 with Size = 64
+  Open EP 81 with Size = 64
+[ 39148826 us] HOST: MSC bulk OUT=01 IN=81
+[ 39148910 us] HOST: first CBW in 1500 ms
+[1:1] Class Request: A1 FE 00 00 00 00 01 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 1 bytes: OK
+[1:1] Control data:
+  0000:  00                                               |.|
+on EP 00 with 0 bytes: OK
+
+[ 40633274 us] GET MAX LUN: 0
+[ 40633347 us] INQUIRY attempt 1 (1502.9 ms after mount)
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 36 bytes ... 
+OK
+on EP 81 with 36 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[ 40636262 us] INQUIRY OK: vendor="WL82    " product="UBOOT1.00       " rev="1.00"
+[ 40636372 us] M0 DONE: UBOOT enumerated and answered INQUIRY via the PIO host.

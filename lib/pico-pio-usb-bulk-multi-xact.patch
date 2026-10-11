@@ -1,0 +1,49 @@
+diff -ru a/src/pio_usb_host.c b/src/pio_usb_host.c
+--- a/src/pio_usb_host.c
++++ b/src/pio_usb_host.c
+@@ -246,11 +246,19 @@
+ static int usb_in_transaction(pio_port_t *pp, endpoint_t *ep);
+ static int usb_out_transaction(pio_port_t *pp, endpoint_t *ep);
+ 
++#ifndef PIO_USB_BULK_FRAME_BUDGET_US
++// FM-1 Transporter: keep running bulk transactions within a frame until this
++// much of the 1 ms frame has elapsed (upstream does one packet per frame).
++#define PIO_USB_BULK_FRAME_BUDGET_US 700
++#endif
++
+ void __not_in_flash_func(pio_usb_host_frame)(void) {
+   if (!timer_active) {
+     return;
+   }
+ 
++  uint32_t const frame_start_us = time_us_32();
++
+   pio_port_t *pp = PIO_USB_PIO_PORT(0);
+ 
+   // Send SOF
+@@ -294,10 +302,21 @@
+           if (ep->ep_num == 0 && ep->data_id == USB_PID_SETUP) {
+             usb_setup_transaction(pp, ep);
+           } else {
+-            if (ep->ep_num & EP_IN) {
+-              usb_in_transaction(pp, ep);
+-            } else {
+-              usb_out_transaction(pp, ep);
++            bool const is_bulk = ((ep->attr & 0x03) == EP_ATTR_BULK);
++            for (;;) {
++              if (ep->ep_num & EP_IN) {
++                usb_in_transaction(pp, ep);
++              } else {
++                usb_out_transaction(pp, ep);
++              }
++              // Bulk only: keep going, NAKs included, while the frame has
++              // time left. Devices such as the JieLi loader NAK briefly while
++              // refilling their FIFO; a hardware host retries at once too.
++              // Completion, STALL and errors clear has_transfer.
++              if (!is_bulk || !ep->has_transfer || ep->transfer_aborted ||
++                  time_us_32() - frame_start_us > PIO_USB_BULK_FRAME_BUDGET_US) {
++                break;
++              }
+             }
+ 
+             if (is_periodic) {

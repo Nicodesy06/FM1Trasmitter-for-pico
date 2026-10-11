@@ -1,0 +1,817 @@
+
+### port lost
+
+### opened /dev/cu.usbmodem112301
+Chip Version B2
+sizeof(hw_endpoint_t) = 32
+  Open EP 81 with Size = 8
+  Allocated 64 bytes (0x50100180)
+  Open EP 02 with Size = 64
+  Allocated 128 bytes (0x501001C0)
+  Open EP 82 with Size = 64
+  Allocated 128 bytes (0x50100240)
+  Bind EP 81 to driver id 1
+  Bind EP 02 to driver id 1
+  Bind EP 82 to driver id 1
+  Open EP 83 with Size = 8
+  Allocated 64 bytes (0x501002C0)
+  Open EP 04 with Size = 64
+  Allocated 128 bytes (0x50100300)
+  Open EP 84 with Size = 64
+  Allocated 128 bytes (0x50100380)
+  Bind EP 83 to driver id 1
+  Bind EP 04 to driver id 1
+  Bind EP 84 to driver id 1
+
+FM-1 Transporter M0
+XIAO RP2040: D+=GP0/D6 D-=GP1/D7, PIO host on PIO1
+If the FM-1 runs stock V15, leave it on: fm1t enters UBOOT via the soft key.
+Otherwise switch it OFF, and ON again once the key is running.
+[  1000843 us] REKEY: waiting for D+ to drop (loader watchdog / power-off)
+[  2337004 us] REKEY: D+ dropped; USB_KEY forced now
+[  2337193 us] KEY: sending 0x16EF, polarity A (D+ clock, D- data). Switch the FM-1 ON now.
+[  2337835 us] data line probe responds (not proof of a target)
+[  2342254 us] ACK (data line held low) after 10 packets
+[  2344269 us] PULSE: D+ high (ROM pull-up), sending 4 us pulses every 1 ms
+[  2351723 us] PULSE: early D+ blip at 7.3 ms, ignored
+[  8344429 us] PULSE: 6000 ms of pulses, D+=1 - handing off
+USBH init on controller 1, speed = Full
+sizeof(usbh_device_t) = 344
+sizeof(hcd_event_t) = 12
+sizeof(_ctrl_xfer) = 16
+sizeof(tuh_xfer_t) = 24
+sizeof(tu_fifo_t) = 20
+sizeof(tu_edpt_stream_t) = 36
+[  8345455 us] HANDOFF: pulses stopped, PIO host started in 936 us
+[1:] USBH Device Attach
+Full Speed
+[1:0] Open EP0 with Size = 8
+Get 8 byte of Device Descriptor
+[1:0] Get Descriptor: 80 06 00 01 00 00 08 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 8 bytes: OK
+[1:0] Control data:
+  0000:  12 01 10 01 00 00 00 40                          |.......@|
+on EP 00 with 0 bytes: OK
+
+Set Address = 1
+[1:0] Set Address: 00 05 01 00 00 00 00 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 0 bytes: OK
+
+[1:1] Open EP0 with Size = 64
+Get Device Descriptor
+[1:1] Get Descriptor: 80 06 00 01 00 00 12 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 18 bytes: OK
+[1:1] Control data:
+  0000:  12 01 10 01 00 00 00 40 4A 4C 57 80 00 03 01 02  |.......@JLW.....|
+  0010:  00 01                                            |..|
+on EP 00 with 0 bytes: OK
+
+Get Configuration[0] Descriptor (9 bytes)
+[1:1] Get Descriptor: 80 06 00 02 00 00 09 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 9 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8                       |.. ......|
+on EP 00 with 0 bytes: OK
+
+Get Configuration[0] Descriptor
+[1:1] Get Descriptor: 80 06 00 02 00 00 20 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 32 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8 09 04 00 00 02 08 06  |.. .............|
+  0010:  50 00 07 05 81 02 40 00 01 07 05 01 02 40 00 01  |P.....@......@..|
+on EP 00 with 0 bytes: OK
+
+Set Configuration = 1
+[1:1] Set Configuration: 00 09 01 00 00 00 00 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 0 bytes: OK
+[1] Aborted transfer on EP 01
+[1] Aborted transfer on EP 81
+[1] Aborted transfer on EP 02
+[1] Aborted transfer on EP 82
+[1] Aborted transfer on EP 03
+[1] Aborted transfer on EP 83
+[1] Aborted transfer on EP 04
+[1] Aborted transfer on EP 84
+[1] Aborted transfer on EP 05
+[1] Aborted transfer on EP 85
+[1] Aborted transfer on EP 06
+[1] Aborted transfer on EP 86
+[1] Aborted transfer on EP 07
+[1] Aborted transfer on EP 87
+[1] Aborted transfer on EP 08
+[1] Aborted transfer on EP 88
+[1] Aborted transfer on EP 09
+[1] Aborted transfer on EP 89
+[1] Aborted transfer on EP 0A
+[1] Aborted transfer on EP 8A
+[1] Aborted transfer on EP 0B
+[1] Aborted transfer on EP 8B
+[1] Aborted transfer on EP 0C
+[1] Aborted transfer on EP 8C
+[1] Aborted transfer on EP 0D
+[1] Aborted transfer on EP 8D
+[1] Aborted transfer on EP 0E
+[1] Aborted transfer on EP 8E
+[1] Aborted transfer on EP 0F
+[1] Aborted transfer on EP 8F
+
+Device configured
+Parsing Configuration descriptor (wTotalLength = 32)
+[  8865928 us] HOST: device mounted, addr=1 (520.5 ms after host start)
+[1:1] Get Descriptor: 80 06 00 01 00 00 12 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 18 bytes: OK
+[1:1] Control data:
+  0000:  12 01 10 01 00 00 00 40 4A 4C 57 80 00 03 01 02  |.......@JLW.....|
+  0010:  00 01                                            |..|
+on EP 00 with 0 bytes: OK
+
+[  8868518 us] DEVICE DESCRIPTOR OK
+[  8868569 us]   VID=4C4A PID=8057 bcdDevice=0300 bcdUSB=0110
+[  8868648 us]   class=00/00/00 ep0=64 configs=1
+[1:1] Get Descriptor: 80 06 01 03 09 04 80 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 28 bytes: OK
+[1:1] Control data:
+  0000:  1C 03 57 00 4C 00 38 00 30 00 55 00 42 00 4F 00  |..W.L.8.0.U.B.O.|
+  0010:  4F 00 54 00 31 00 2E 00 30 00 30 00              |O.T.1...0.0.|
+on EP 00 with 0 bytes: OK
+
+[  8871528 us]   manufacturer: "WL80UBOOT1.00"
+[1:1] Get Descriptor: 80 06 02 03 09 04 80 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 28 bytes: OK
+[1:1] Control data:
+  0000:  1C 03 57 00 4C 00 38 00 30 00 55 00 42 00 4F 00  |..W.L.8.0.U.B.O.|
+  0010:  4F 00 54 00 31 00 2E 00 30 00 30 00              |O.T.1...0.0.|
+on EP 00 with 0 bytes: OK
+
+[  8874522 us]   product: "WL80UBOOT1.00"
+[1:1] Get Descriptor: 80 06 00 02 00 00 09 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 9 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8                       |.. ......|
+on EP 00 with 0 bytes: OK
+
+[1:1] Get Descriptor: 80 06 00 02 00 00 20 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 32 bytes: OK
+[1:1] Control data:
+  0000:  09 02 20 00 01 01 00 80 C8 09 04 00 00 02 08 06  |.. .............|
+  0010:  50 00 07 05 81 02 40 00 01 07 05 01 02 40 00 01  |P.....@......@..|
+on EP 00 with 0 bytes: OK
+
+[  8880511 us] CONFIGURATION DESCRIPTOR (32 bytes), bConfigurationValue=1
+[  8880603 us]   interface 0 alt 0: class=08/06/50 endpoints=2
+[  8880689 us]     endpoint 81 attr=02 maxpacket=64 interval=1
+[  8880768 us]     endpoint 01 attr=02 maxpacket=64 interval=1
+  Open EP 01 with Size = 64
+  Open EP 81 with Size = 64
+[  8880971 us] HOST: MSC bulk OUT=01 IN=81
+[  8881033 us] HOST: first CBW in 1500 ms
+[1:1] Class Request: A1 FE 00 00 00 00 01 00 
+on EP 00 with 8 bytes: OK
+on EP 80 with 1 bytes: OK
+[1:1] Control data:
+  0000:  00                                               |.|
+on EP 00 with 0 bytes: OK
+
+[ 10368523 us] GET MAX LUN: 0
+[ 10368592 us] INQUIRY attempt 1 (1502.5 ms after mount)
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 36 bytes ... 
+OK
+on EP 81 with 36 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[ 10371520 us] INQUIRY OK: vendor="WL82    " product="UBOOT1.00       " rev="1.00"
+[ 10371617 us] M0 DONE: UBOOT enumerated and answered INQUIRY via the PIO host.
+[ 43657470 us] JL: uploading wl82loader (24064 bytes) to 01C02000
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 512 bytes ... 
+OK
+on EP 01 with 512 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 16 bytes ... 
+OK
+on EP 81 with 16 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[ 43855520 us] JL: loader running
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 16 bytes ... 
+OK
+on EP 81 with 16 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[ 43858519 us] JL: loader USB buffer 32768 bytes, reading 4096 at a time
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 16 bytes ... 
+OK
+on EP 81 with 16 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[1] Claimed EP 0x01
+  Queue EP 01 with 31 bytes ... 
+OK
+on EP 01 with 31 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 16 bytes ... 
+OK
+on EP 81 with 16 bytes: OK
+[1] Claimed EP 0x81
+  Queue EP 81 with 13 bytes ... 
+OK
+on EP 81 with 13 bytes: OK
+[ 43867517 us] PROTO: chip key 980F, device type 3, flash id 856014
