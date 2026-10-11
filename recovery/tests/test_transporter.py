@@ -282,6 +282,7 @@ class EndToEndTests(Base):
 
     def test_wrong_chip_key_refused(self):
         Path("ref.bin").write_bytes(self.before)
+        tr.write_sidecar(Path("ref.bin"), self.before)      # multiboard: --ref needs its record
         t, m = self.transporter(flash=self.before, chip_key=0x1234)
         rc = self.run_main(["restore", str(self.path), "--ref", "ref.bin", "--write", "--yes"], t)
         self.assertEqual(rc, 1)
@@ -310,10 +311,34 @@ class EndToEndTests(Base):
 
     def test_verify_v15_refuses_others(self):
         Path("ref.bin").write_bytes(self.before)
+        tr.write_sidecar(Path("ref.bin"), self.before)
         t, m = self.transporter(flash=self.before)
         rc = self.run_main(["restore", str(self.path), "--ref", "ref.bin", "--verify-v15"], t)
         self.assertEqual(rc, 1)
         self.assertEqual(m.reads, 0)
+
+    # multiboard: the reference must come from a verified double read ---------
+
+    def test_ref_without_double_read_record_refused(self):
+        Path("ref.bin").write_bytes(self.before)
+        t, m = self.transporter(flash=self.before)
+        rc = self.run_main(["restore", str(self.path), "--ref", "ref.bin", "--write", "--yes"], t)
+        self.assertNotEqual(rc, 0)
+        self.assertEqual((m.reads, m.writes), (0, []))
+        self.assertIn("has no double-read record", self.out.getvalue())
+
+    def test_ref_not_matching_its_record_refused(self):
+        t, m = self.transporter(flash=self.before)
+        ref = self.dump(t)
+        self.assertTrue(ref.with_suffix(".json").is_file())
+        data = bytearray(ref.read_bytes())
+        data[0x60000] ^= 1                                  # edited after the dump
+        ref.write_bytes(bytes(data))
+        reads = m.reads
+        rc = self.run_main(["restore", str(self.path), "--ref", str(ref), "--write", "--yes"], t)
+        self.assertNotEqual(rc, 0)
+        self.assertEqual((m.reads, m.writes), (reads, []))
+        self.assertIn("does not match its record", self.out.getvalue())
 
     def test_ref_must_be_full_dump(self):
         Path("ref.bin").write_bytes(self.before[:0x80000])
@@ -580,8 +605,8 @@ class SetupTests(Base):
         self.loader = JL_LOADER.read_bytes()
 
     def setup_cmd(self, jl, *extra, input_fn=None):
-        return tr.main(["setup", "--jl-dir", str(jl), "--uf2", "out/fm1_transporter.uf2"]
-                       + list(extra), input_fn=input_fn)
+        return tr.main(["setup", "--board", "xiao_rp2040", "--jl-dir", str(jl),
+                        "--uf2", "out/fm1_transporter.uf2"] + list(extra), input_fn=input_fn)
 
     def test_setup_builds_pinned_firmware(self):
         jl = fake_jl_dir(self.tmp, self.loader)
@@ -660,8 +685,8 @@ class WizardTests(Base):
 
     def wizard(self, t, answers, *extra):
         script = Script(answers)
-        rc = tr.main(["--dry-run", "--wait", "2", "wizard", "--out", "bk", "--uf2", "none.uf2"]
-                     + list(extra), transporter=t, input_fn=script)
+        rc = tr.main(["--dry-run", "--wait", "2", "wizard", "--board", "xiao_rp2040", "--out", "bk",
+                      "--uf2", "none.uf2"] + list(extra), transporter=t, input_fn=script)
         return rc, script
 
     def test_wizard_synthetic_end_to_end(self):
@@ -712,9 +737,9 @@ class WizardTests(Base):
 
     def test_real_run_needs_setup_first(self):
         with mock.patch.object(tr, "connect", side_effect=AssertionError("port opened")), \
-                mock.patch.object(tr, "cmd_flash_xiao", side_effect=AssertionError("flashed")):
-            rc = tr.main(["wizard", "--uf2", "none.uf2", "--v15", str(self.path)],
-                         input_fn=Script([]))
+                mock.patch.object(tr, "cmd_flash_board", side_effect=AssertionError("flashed")):
+            rc = tr.main(["wizard", "--board", "xiao_rp2040", "--uf2", "none.uf2", "--v15",
+                          str(self.path)], input_fn=Script([]))
         self.assertEqual(rc, 1)
         self.assertIn("Run `python3 fm1_transporter_recover.py setup` first", self.out.getvalue())
 
@@ -730,8 +755,8 @@ class WizardRealTests(Base):
                                           tr.PLACEHOLDER_PATTERN.read_bytes(),
                                           JL_LOADER.read_bytes()))
         script = Script(["no/such/FM-1.fwsc", str(V15_FWSC), "", "", "WRITE"])
-        rc = tr.main(["--dry-run", "--mock-flash", str(REAL_DUMP), "wizard", "--out", "bk",
-                      "--uf2", str(uf2)], input_fn=script)
+        rc = tr.main(["--dry-run", "--mock-flash", str(REAL_DUMP), "wizard", "--board", "xiao_rp2040",
+                      "--out", "bk", "--uf2", str(uf2)], input_fn=script)
         self.assertEqual(rc, 0)
         self.assertEqual(script.answers, [])
         text = self.out.getvalue()

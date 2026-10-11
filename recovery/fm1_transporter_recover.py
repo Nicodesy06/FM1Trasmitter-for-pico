@@ -7,13 +7,29 @@ FM-1 Transporter.
 
 A hard-bricked FM-1 (typically after an interrupted firmware update) shows no
 USB device at all, so fm1_unbrick.py cannot reach it. The FM-1 Transporter
-(https://github.com/kurogedelic/FM-1-transporter) is a Seeed XIAO RP2040 wired
-to the FM-1's USB D+, D- and GND. At power-on it keys the JieLi WL82 into its
+(https://github.com/kurogedelic/FM-1-transporter) is an RP2040 board wired
+to the FM-1's USB D+, D- and GND: the Seeed XIAO RP2040 it was built on, or,
+in this multiboard fork, another board with a profile in ../boards/ (DollaTek
+RP2040 Type-C, Raspberry Pi Pico). The board is chosen explicitly with
+--board; the tool never guesses which firmware to install. At power-on it keys the JieLi WL82 into its
 mask-ROM UBOOT and offers the 1 MiB flash to the computer over a USB serial
 line protocol (CDC 1, the "data port"). This script speaks that protocol
 itself (pyserial only) and automates the recovery: flash the XIAO, wait for
 the FM-1, dump the flash twice, explain what is in it, and rewrite only the
 4 KiB application sectors that differ from a package.
+
+Multiboard additions (FM1Trasmitter-for-pico):
+  * --board selects the profile; setup, flash-board and wizard require it
+    (flash-xiao is flash-board --board xiao_rp2040);
+  * the XIAO keeps the hardware-proven upstream a632d92 firmware by default,
+    other boards use the multiboard placeholder firmware from ../dist/;
+  * a multiboard firmware must report the selected board (`ident`) before
+    anything else is asked of it; legacy firmware is never sent `ident`;
+  * restore refuses a --ref dump without the sidecar written by a verified
+    double read (dump/recover/wizard, or fm1-board-tool fm1-check --dump);
+  * the RPI-RP2 disk is identified by its contents (and on Windows by its
+    label and removable type), never by drive letter alone;
+  * the console CDC interface is never written to while probing.
 
 Safety rules, enforced in code:
   * only whole 4 KiB sectors in 0x4000..0x92FFF are ever written; the boot
@@ -50,7 +66,18 @@ from pathlib import Path
 
 import fm1_unbrick as fu
 
-TOOL_VERSION = "1.0.0"
+# Board profiles and the multiboard helpers live in this repository
+# (../boards, ../host/fm1_board_tool); fm1-board-tool reads the same files.
+REPO_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_DIR / "host"))
+try:
+    from fm1_board_tool import profiles as board_profiles
+    from fm1_board_tool import uf2 as board_uf2
+    from fm1_board_tool import volumes as board_volumes
+except ImportError:         # the recovery folder copied on its own
+    board_profiles = board_uf2 = board_volumes = None
+
+TOOL_VERSION = "1.0.0-multiboard"
 
 FLASH_SIZE = fu.FLASH_SIZE            # 1 MiB SPI NOR
 SECTOR = fu.SECTOR_SIZE               # 4 KiB, the only write unit
@@ -108,6 +135,125 @@ REBOOT_WAIT = 20.0
 HINT_EVERY = 5.0
 WAIT_HINT = ("the FM-1 has not answered the USB_KEY yet: switch it on now / check D+ D- GND / "
              "try rekey")
+
+# --------------------------------------------------------------------------
+# Boards and their Transporter firmware
+# --------------------------------------------------------------------------
+
+DIST_DIR = REPO_DIR / "dist"
+SIDECAR_SUFFIX = ".json"
+
+
+def board_ids():
+    if board_profiles is None:
+        return ["xiao_rp2040"]
+    return sorted(p.id for p in board_profiles.load_profiles().values() if p.enabled)
+
+
+def get_board(board_id):
+    if board_profiles is None:
+        if board_id != "xiao_rp2040":
+            raise fu.UnbrickError("board profiles not found (../boards); only xiao_rp2040 works "
+                                  "without them")
+        return None
+    try:
+        return board_profiles.get_profile(board_id)
+    except board_profiles.ProfileError as e:
+        raise fu.UnbrickError(str(e))
+
+
+def require_board(args, what):
+    if not getattr(args, "board", None):
+        raise fu.UnbrickError("%s needs the board: add --board %s (fm1-board-tool boards lists "
+                              "them). The tool does not guess which firmware to install."
+                              % (what, "|".join(board_ids())))
+    get_board(args.board)
+    return args.board
+
+
+def board_firmware(board_id, flavour="auto"):
+    """Which prebuilt placeholder firmware a board uses, with every hash.
+
+    XIAO + auto/upstream: the upstream a632d92 build that recovered a unit
+    (transporter/); otherwise the multiboard build in ../dist/<board>/."""
+    if board_id == "xiao_rp2040" and flavour in ("auto", "upstream"):
+        return {"board": board_id, "multiboard": False, "label": "upstream a632d92 (XIAO, hardware-proven)",
+                "placeholder": PLACEHOLDER_UF2, "placeholder_sha256": PLACEHOLDER_UF2_SHA256,
+                "spliced_sha256": TRANSPORTER_UF2_SHA256, "out": DEFAULT_UF2}
+    if flavour == "upstream":
+        raise fu.UnbrickError("the upstream firmware exists only for the XIAO RP2040")
+    prof = get_board(board_id)
+    stem = Path(prof.uf2_name).stem if prof else "fm1_transporter_" + board_id
+    d = DIST_DIR / board_id
+    man_path = d / "manifest-placeholder.json"
+    try:
+        import json
+        man = json.loads(man_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise fu.UnbrickError("no prebuilt firmware for %s (%s): %s" % (board_id, man_path, e))
+    return {"board": board_id, "multiboard": True,
+            "label": "multiboard %s build %s" % (man.get("board"), man.get("build_id")),
+            "placeholder": d / man["files"]["uf2"]["file"],
+            "placeholder_sha256": man["files"]["uf2"]["sha256"],
+            "spliced_sha256": man.get("spliced_uf2_sha256"),
+            "out": TRANSPORTER_DIR / ("%s.uf2" % stem)}
+
+
+def default_uf2(args):
+    if getattr(args, "uf2", None):
+        return Path(args.uf2)
+    return board_firmware(require_board(args, "this command"), getattr(args, "firmware", "auto"))["out"]
+
+
+def check_board_ident(t, args):
+    """A multiboard firmware must say it runs on the selected board. Legacy
+    (upstream) firmware is never sent `ident`: it would queue the line for
+    its core 1 and shift the reply to the next `status`."""
+    board = getattr(args, "board", None)
+    if t.mock or not board:
+        return
+    fw = board_firmware(board, getattr(args, "firmware", "auto"))
+    if not fw["multiboard"]:
+        log.debug("legacy firmware for %s: no ident check", board)
+        return
+    reply = t.request("ident", 3.0)
+    if not reply.startswith("OK fm1t="):
+        raise fu.SafetyError("the Transporter on %s did not answer ident (%r): it is not the "
+                             "multiboard firmware for %s. Flash it with `flash-board --board %s`, "
+                             "then unplug and replug the board." % (t.port, reply, board, board))
+    fields = dict(kv.split("=", 1) for kv in reply.split()[1:] if "=" in kv)
+    if fields.get("board") != board:
+        raise fu.SafetyError("the Transporter on %s runs firmware for %s, not %s; refusing"
+                             % (t.port, fields.get("board"), board))
+    log.info("Transporter board %s, firmware %s build %s", board, fields.get("fw"), fields.get("build"))
+
+
+def write_sidecar(path: Path, data: bytes, extra=None):
+    """Proof that `path` came from two identical full reads (restore needs it)."""
+    import json
+    side = {"file": path.name, "bytes": len(data), "sha256": fu.sha256(data),
+            "crc32": "%08X" % crc32(data), "double_read": True, "reads_identical": True}
+    side.update(extra or {})
+    sp = path.with_suffix(SIDECAR_SUFFIX)
+    sp.write_text(json.dumps(side, indent=2), encoding="utf-8")
+    return sp
+
+
+def check_sidecar(path: Path, data: bytes):
+    import json
+    sp = Path(path).with_suffix(SIDECAR_SUFFIX)
+    try:
+        side = json.loads(sp.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise fu.SafetyError("--ref %s has no double-read record (%s). Only a dump made by `dump`, "
+                             "`recover`, the wizard or `fm1-board-tool fm1-check --dump` (two "
+                             "identical full reads) can be the reference for a write." % (path, sp.name))
+    if not (side.get("double_read") and side.get("reads_identical")):
+        raise fu.SafetyError("%s does not record two identical reads; refusing" % sp.name)
+    if side.get("sha256") != fu.sha256(data) or side.get("bytes") != len(data):
+        raise fu.SafetyError("--ref %s does not match its record %s (sha256 %s vs %s); refusing"
+                             % (path, sp.name, fu.sha256(data), side.get("sha256")))
+    log.info("--ref double-read record OK (sha256 %s)", side["sha256"])
 
 EXIT_OK, EXIT_FAIL, EXIT_DANGER = fu.EXIT_OK, fu.EXIT_FAIL, fu.EXIT_DANGER
 
@@ -296,7 +442,7 @@ class MockTransporter:
     port = "mock://fm1-transporter"
 
     def __init__(self, flash=None, chip_key=fu.EXPECTED_CHIP_KEY, flash_id=fu.EXPECTED_FLASH_ID,
-                 present=True, uboot=True, flaky_read=None, wsec_errors=None):
+                 present=True, uboot=True, flaky_read=None, wsec_errors=None, board=None):
         if flash is None:
             flash = fu.synthetic_flash()
         if len(flash) != FLASH_SIZE:
@@ -315,6 +461,7 @@ class MockTransporter:
         self._pending = None        # request waiting for the FM-1
         self._binary = None         # (line, expected payload length)
         self.closed = False
+        self.board = board          # multiboard firmware: answers ident on "core 0"
 
     # pyserial surface
     def write(self, data):
@@ -373,6 +520,9 @@ class MockTransporter:
                 self._emit("PONG")
             elif line == "rekey":
                 self._emit("OK rekey")
+            elif line == "ident" and self.board:
+                self._emit("OK fm1t=2 fw=mock build=mock upstream=a632d92 board=%s soc=RP2040 "
+                           "dp=0 dm=1 leds=none binary=mock validation=SIMULATED" % self.board)
             elif line.startswith("wsec "):
                 self._binary = (line, SECTOR)
             else:
@@ -454,10 +604,23 @@ def rp2_ports():
     return [p for p in serial.tools.list_ports.comports() if p.vid == RP2_VID]
 
 
+def _interface_number(p):
+    import re
+    for text in (getattr(p, "location", None) or "", getattr(p, "hwid", None) or ""):
+        m = re.search(r":(?:\d+|x)\.(\d+)", text)
+        if m:
+            return int(m.group(1))
+    return None
+
+
 def candidate_ports():
+    """RP2040 serial ports, data interface first; the console interface (0)
+    is skipped so probing never writes to it."""
     found = []
     try:
-        found += [p.device for p in rp2_ports()]
+        ports = rp2_ports()
+        ports.sort(key=lambda p: 0 if _interface_number(p) == 2 else 1)
+        found += [p.device for p in ports if _interface_number(p) != 0]
     except fu.UnbrickError:
         raise
     except Exception as e:
@@ -509,7 +672,7 @@ def connect(args):
         m = MockTransporter(flash=flash,
                             chip_key=args.mock_chip_key if args.mock_chip_key is not None
                             else fu.EXPECTED_CHIP_KEY,
-                            present=not args.mock_absent)
+                            present=not args.mock_absent, board=getattr(args, "board", None))
         log.info("DRY RUN: using a MOCK Transporter%s (no serial port is opened, nothing is "
                  "written to hardware)", " seeded from %s" % args.mock_flash
                  if args.mock_flash else "")
@@ -520,11 +683,16 @@ def connect(args):
         t = probe_port(args.port)
         if t is not None:
             log.info("Transporter data port %s", t.port)
+            try:
+                check_board_ident(t, args)
+            except BaseException:
+                t.close()
+                raise
             return t
         if time.monotonic() >= deadline:
             raise fu.UnbrickError(
-                "no FM-1 Transporter data port answers ping%s. Check that the XIAO is plugged "
-                "in and runs the Transporter firmware (`flash-xiao`)."
+                "no FM-1 Transporter data port answers ping%s. Check that the board is plugged "
+                "in and runs the Transporter firmware (`flash-board --board ...`)."
                 % (" on %s" % args.port if args.port else ""))
         if time.monotonic() >= next_hint:
             log.info("  waiting for the Transporter data port ...")
@@ -964,6 +1132,7 @@ def save_dump(data, outdir: Path, mock: bool) -> Path:
         raise fu.UnbrickError("the dump file %s does not read back correctly" % path)
     log.info("Dump OK     %s", path)
     log.info("  sha256 %s  crc32 %08X (both reads identical)", fu.sha256(data), crc32(data))
+    write_sidecar(path, data, {"mock": bool(mock)})
     return path
 
 
@@ -1203,11 +1372,14 @@ def rp2_volume_candidates():
 
 
 def find_rp2_volumes():
+    if sys.platform == "win32" and board_volumes is not None:
+        # label RPI-RP2 + removable drive + INFO_UF2.TXT/INDEX.HTM contents
+        return [v.path for v in board_volumes.find()]
     found = []
     for p in rp2_volume_candidates():
         info = p / "INFO_UF2.TXT"
         try:
-            if info.is_file() and RP2_VOLUME in info.read_text(errors="replace"):
+            if info.is_file() and "Board-ID: %s" % RP2_VOLUME in info.read_text(errors="replace"):
                 found.append(p)
         except OSError:
             continue
@@ -1235,13 +1407,57 @@ def touch_1200(port):
         log.debug("1200-baud touch: %s (normal when the board resets at once)", e)
 
 
+def check_uf2_for_board(data: bytes, board, name):
+    """A multiboard UF2 must carry exactly one marker, for `board`, and must
+    not be an unspliced placeholder; an unmarked (upstream) UF2 is accepted
+    only for the XIAO."""
+    if board_uf2 is None or board is None:
+        return
+    try:
+        info = board_uf2.info(data, name)
+    except board_uf2.UF2Error as e:
+        raise fu.SafetyError(str(e))
+    if not info["boards"]:
+        if board != "xiao_rp2040":
+            raise fu.SafetyError("%s carries no board marker: it is not a multiboard build, so it "
+                                 "can only be the upstream XIAO firmware; refusing it for %s"
+                                 % (name, board))
+        log.info("UF2 is an upstream (XIAO-only) build")
+    else:
+        try:
+            board_uf2.check_for_board(data, get_board(board), name)
+        except board_uf2.UF2Error as e:
+            raise fu.SafetyError(str(e))
+        log.info("UF2 built for %s, build %s", info["boards"][0], info["builds"][0])
+    try:
+        pattern = PLACEHOLDER_PATTERN.read_bytes()
+    except OSError:
+        pattern = None
+    if pattern and pattern in b"".join(blk[32:32 + size] for blk, size in parse_uf2(data, name)):
+        raise fu.SafetyError("%s still holds the loader placeholder; run `setup --board %s` and "
+                             "flash the file it writes" % (name, board))
+
+
 def cmd_flash_xiao(args):
-    uf2 = Path(args.uf2)
+    if getattr(args, "board", None) not in (None, "xiao_rp2040"):
+        raise fu.UnbrickError("flash-xiao is for the XIAO RP2040; use flash-board --board %s"
+                              % args.board)
+    args.board = "xiao_rp2040"
+    return cmd_flash_board(args)
+
+
+def cmd_flash_board(args):
+    board = require_board(args, "flash-board")
+    prof = get_board(board)
+    name = prof.name if prof else "XIAO RP2040"
+    uf2 = default_uf2(args)
     data = check_uf2(uf2)
+    log.info("Board       %s (%s)", board, name)
     log.info("UF2         %s (%d bytes, %d blocks), sha256 %s", uf2, len(data), len(data) // 512,
              fu.sha256(data))
+    check_uf2_for_board(data, board, uf2.name)
     if args.dry_run:
-        log.info("DRY RUN: would find %s (or 1200-baud-touch the XIAO's port), copy %s to it, "
+        log.info("DRY RUN: would find %s (or 1200-baud-touch the board's port), copy %s to it, "
                  "and wait for the Transporter data port", RP2_VOLUME, uf2.name)
         return EXIT_OK
     vols = find_rp2_volumes()
@@ -1258,13 +1474,18 @@ def cmd_flash_xiao(args):
             ports = [p.device for p in infos]
         if not ports:
             raise fu.UnbrickError("no %s disk and no RP2040 serial port (USB VID 2E8A) found. "
-                                  "Hold BOOT on the XIAO while plugging it in, then run this "
+                                  "Hold BOOT on the board while plugging it in, then run this "
                                   "again." % RP2_VOLUME)
+        # The Transporter reboots to BOOTSEL on a 1200-baud open of its CONSOLE
+        # (interface 0) only; pick that one when the OS tells interfaces apart.
+        if not args.port:
+            consoles = [p.device for p in infos if _interface_number(p) == 0]
+            ports = consoles or ports
         touch_1200(ports[0])
         log.info("Waiting up to %d s for the %s disk ...", BOOTSEL_WAIT, RP2_VOLUME)
         vols = wait_for(find_rp2_volumes, BOOTSEL_WAIT)
         if not vols:
-            raise fu.UnbrickError("no %s disk appeared within %d s. Hold BOOT on the XIAO while "
+            raise fu.UnbrickError("no %s disk appeared within %d s. Hold BOOT on the board while "
                                   "plugging it in, then run this again." % (RP2_VOLUME,
                                                                             BOOTSEL_WAIT))
     if len(vols) > 1:
@@ -1279,7 +1500,7 @@ def cmd_flash_xiao(args):
         # The RP2040 reboots as soon as the last block arrives; the OS may complain.
         log.info("  copy ended with %s (normal if the board rebooted at once)", e)
     if wait_for(lambda: not (vol / "INFO_UF2.TXT").exists(), REBOOT_WAIT):
-        log.info("%s disk gone: the XIAO is rebooting into the new firmware", RP2_VOLUME)
+        log.info("%s disk gone: the board is rebooting into the new firmware", RP2_VOLUME)
     else:
         log.warning("the %s disk is still there after %d s: the copy may not have been "
                     "accepted", RP2_VOLUME, REBOOT_WAIT)
@@ -1295,7 +1516,11 @@ def cmd_flash_xiao(args):
         log.error("No port answers ping: the Transporter firmware is not running.")
         return EXIT_FAIL
     log.info("Transporter data port: %s (the other CDC port is the console)", t.port)
-    t.close()
+    try:
+        if board_uf2 is not None and board_uf2.MARKER_RE.search(data):
+            check_board_ident(t, args)
+    finally:
+        t.close()
     return EXIT_OK
 
 
@@ -1368,6 +1593,7 @@ def cmd_restore(args, transporter=None):
     except OSError as e:
         raise fu.UnbrickError("cannot read --ref %s: %s" % (ref_path, e))
     plan = Plan(pkg, ref, ref_path)
+    check_sidecar(ref_path, ref)
     plan.report()
 
     def run(t):
@@ -1418,10 +1644,11 @@ def read_checked(path: Path, want: str, what: str, fix: str) -> bytes:
     return data
 
 
-def build_transporter_uf2(jl_dir: Path) -> bytes:
+def build_transporter_uf2(jl_dir: Path, fw=None) -> bytes:
     """Check the three inputs, splice, check the result: the firmware to flash."""
-    placeholder = read_checked(PLACEHOLDER_UF2, PLACEHOLDER_UF2_SHA256, "placeholder firmware",
-                               "This repository's transporter/ folder is damaged: download "
+    fw = fw or board_firmware("xiao_rp2040")
+    placeholder = read_checked(fw["placeholder"], fw["placeholder_sha256"], "placeholder firmware",
+                               "The prebuilt firmware folder is damaged: download "
                                "the repository again.")
     pattern = read_checked(PLACEHOLDER_PATTERN, PLACEHOLDER_PATTERN_SHA256, "placeholder pattern",
                            "This repository's transporter/ folder is damaged: download the "
@@ -1434,10 +1661,14 @@ def build_transporter_uf2(jl_dir: Path) -> bytes:
                            "once).") % jl_dir)
     out = splice_uf2(placeholder, pattern, loader)
     got = fu.sha256(out)
-    if got != TRANSPORTER_UF2_SHA256:
+    want = fw["spliced_sha256"]
+    if want and got != want:
         raise fu.UnbrickError("the spliced firmware has sha256 %s, expected %s; nothing was "
-                              "written. Download the repository again." % (got,
-                                                                           TRANSPORTER_UF2_SHA256))
+                              "written. Download the repository again." % (got, want))
+    if not want:
+        log.warning("  no recorded sha256 for the spliced %s firmware; checked its pieces only",
+                    fw["board"])
+    check_uf2_for_board(out, fw["board"], "the spliced firmware")
     log.info("  %-34s sha256 %s  OK", "spliced Transporter firmware", got)
     return out
 
@@ -1528,15 +1759,18 @@ def write_atomic(path: Path, data: bytes):
 
 
 def cmd_setup(args, input_fn=input):
-    jl_dir, out = Path(args.jl_dir), Path(args.uf2)
+    board = require_board(args, "setup")
+    fw = board_firmware(board, args.firmware)
+    log.info("Board %s: %s firmware", board, fw["label"])
+    jl_dir, out = Path(args.jl_dir), default_uf2(args)
     if args.check:
         log.info("Checking every fingerprint (nothing is downloaded or written):")
-        data = build_transporter_uf2(jl_dir)
+        data = build_transporter_uf2(jl_dir, fw)
         if out.is_file():
             got = fu.sha256(out.read_bytes())
             if got != fu.sha256(data):
                 raise fu.UnbrickError("%s has sha256 %s, expected %s. %s to rebuild it."
-                                      % (out, got, TRANSPORTER_UF2_SHA256, RERUN_SETUP))
+                                      % (out, got, fu.sha256(data), RERUN_SETUP))
             log.info("  %-34s sha256 %s  OK", str(out), got)
         else:
             log.info("  %s is not built yet: run setup", out)
@@ -1547,21 +1781,22 @@ def cmd_setup(args, input_fn=input):
              fu.JLUB_COMMIT[:7])
     fetch_jlub(jl_dir)
     log.info("Step 2/4: checking the fingerprints of the firmware pieces")
-    data = build_transporter_uf2(jl_dir)
+    data = build_transporter_uf2(jl_dir, fw)
     log.info("Step 3/4: the Transporter firmware file")
     if out.is_file() and out.read_bytes() == data:
         log.info("  %s is already built and correct", out)
     else:
         write_atomic(out, data)
-        if fu.sha256(out.read_bytes()) != TRANSPORTER_UF2_SHA256:
+        if out.read_bytes() != data:
             raise fu.UnbrickError("%s does not read back correctly (disk problem?). %s."
                                   % (out, RERUN_SETUP))
         log.info("  wrote %s", out)
     log.info("Transporter firmware: %s", out.resolve())
-    log.info("  sha256 %s", TRANSPORTER_UF2_SHA256)
+    log.info("  sha256 %s", fu.sha256(data))
     log.info("Step 4/4: pyserial")
     ensure_pyserial(args, input_fn)
-    log.info("Setup complete. Next: python3 fm1_transporter_recover.py wizard --v15 FM-1.fwsc")
+    log.info("Setup complete. Next: python3 fm1_transporter_recover.py wizard --board %s "
+             "--v15 FM-1.fwsc", board)
     return EXIT_OK
 
 
@@ -1588,20 +1823,44 @@ WIRING_TEXT = """\
   * Charge the FM-1 fully first: it runs on its battery during all of this.
   * Swapping D+ and D- damages nothing; the FM-1 is simply not found."""
 
+def wiring_text(board):
+    """The XIAO keeps the upstream text; other boards get theirs from the profile."""
+    if board in (None, "xiao_rp2040"):
+        return WIRING_TEXT
+    prof = get_board(board)
+    rows = prof.wiring_rows()
+    w = max(len(r[0]) for r in rows) + 2
+    lines = ["  Wire the %s to the FM-1's USB-C pigtail (three wires):" % prof.name, "",
+             "    %-*s FM-1 USB" % (w, "board pin")]
+    for pin, sig in rows:
+        lines.append("    %-*s %s" % (w, pin, sig))
+    lines.append("    %-*s VBUS 5 V: NOT connected, tape it off" % (w, "(nothing)"))
+    lines += ["",
+              "  Identify D+ and D- on the pigtail with a multimeter (continuity to the",
+              "  USB-C plug pins A6/B6 = D+, A7/B7 = D-, A1/A12/B1/B12 = GND), not by the",
+              "  wire colours alone. Board guide: DOLLATEK-RP2040-GUIDE.md (repository root).",
+              "",
+              "  * The FM-1 must be switched OFF while you wire it.",
+              "  * Never use the board's 3V3, VBUS, VSYS or VIN pins for the FM-1.",
+              "  * Charge the FM-1 fully first: it runs on its battery during all of this.",
+              "  * Swapping D+ and D- damages nothing; the FM-1 is simply not found."]
+    return "\n".join(lines)
+
+
 FLASH_ADVICE = """\
   What to try:
   * Use a USB-C cable that carries data (a charge-only cable shows nothing).
-  * Unplug the XIAO, hold its small B (BOOT) button, plug it in again, then let
+  * Unplug the board, hold its BOOT button, plug it in again, then let
     go: a disk called RPI-RP2 should appear on this computer.
-  * Keep only one XIAO / Raspberry Pi Pico board plugged in.
+  * Keep only one RP2040 board (XIAO, DollaTek, Pico ...) plugged in.
   * Linux: if the port cannot be opened, run `sudo usermod -aG dialout $USER`,
     log out and back in."""
 
 CONNECT_ADVICE = """\
   What to try:
-  * Check the three wires: D6 green to D+, D7 white to D-, GND black to GND;
+  * Check the three wires: D+ (XIAO D6 / GP0), D- (XIAO D7 / GP1) and GND;
     the red wire must NOT be connected.
-  * Switch the FM-1 OFF, unplug the XIAO from the computer and plug it back in,
+  * Switch the FM-1 OFF, unplug the board from the computer and plug it back in,
     then switch the FM-1 ON again.
   * Make sure the FM-1's battery is charged.
   * If it still does not answer, quit (q) and run
@@ -1611,7 +1870,7 @@ DUMP_ADVICE = """\
   What to try:
   * The two reads did not agree or the transfer stopped: press the wires
     firmly onto the pins, keep them away from the computer's power supply.
-  * Then switch the FM-1 off, unplug and replug the XIAO, switch the FM-1 on."""
+  * Then switch the FM-1 off, unplug and replug the board, switch the FM-1 on."""
 
 FINAL_TEXT = """\
   1. Switch the FM-1 OFF.
@@ -1645,6 +1904,8 @@ class Wizard:
         self.own_t = transporter is None
         self.v15 = None
         self.writing = False
+        self.board = getattr(args, "board", None)
+        self.board_name = "XIAO RP2040"
 
     # talking to the person ---------------------------------------------------
 
@@ -1750,11 +2011,42 @@ class Wizard:
             log.info("  Official V15 verified: firmware sha256 %s", pkg.firmware_sha256)
             return pkg
 
+    def choose_board(self):
+        a = self.args
+        if a.board:
+            get_board(a.board)
+            return a.board
+        ids = board_ids()
+        self.say("  Which RP2040 board will you wire to the FM-1? The firmware differs per board.")
+        for i, b in enumerate(ids, 1):
+            prof = get_board(b)
+            self.say("    %d) %-24s %s (%s)" % (i, b, prof.name if prof else b,
+                                                prof.validation if prof else "?"))
+        while True:
+            answer = self.ask("Board number or id (q quits): ")
+            if answer is None:
+                raise WizardQuit("no board chosen; start the wizard again with --board ID")
+            answer = answer.strip()
+            if answer.lower() in ("q", "quit", "exit"):
+                raise WizardQuit("stopped at your request")
+            if answer.isdigit() and 1 <= int(answer) <= len(ids):
+                answer = ids[int(answer) - 1]
+            if answer in ids:
+                a.board = answer
+                log.info("  Board: %s", answer)
+                return answer
+
     def step0_checks(self):
         a = self.args
-        self.step(0, "checks", "  Checking that setup was run, that the Transporter firmware file "
-                               "is intact,\n  that pyserial is installed, and that you have the "
-                               "official V15 file.")
+        self.step(0, "checks", "  Choosing the board, checking that setup was run for it, that the "
+                               "Transporter\n  firmware file is intact, that pyserial is installed, "
+                               "and that you have the\n  official V15 file.")
+        board = self.choose_board()
+        self.board = board
+        self.board_name = get_board(board).name if get_board(board) else "XIAO RP2040"
+        fw = board_firmware(board, a.firmware)
+        if not a.uf2:
+            a.uf2 = str(fw["out"])
         uf2 = Path(a.uf2)
         if not uf2.is_file():
             msg = ("the Transporter firmware %s is missing. Run `python3 fm1_transporter_recover.py "
@@ -1763,51 +2055,58 @@ class Wizard:
                 raise fu.UnbrickError(msg)
             log.warning("  DRY RUN: %s (a real run stops here)", msg)
         else:
-            got = fu.sha256(uf2.read_bytes())
-            if got != TRANSPORTER_UF2_SHA256:
+            data = uf2.read_bytes()
+            got = fu.sha256(data)
+            if fw["spliced_sha256"] and got != fw["spliced_sha256"]:
                 raise fu.UnbrickError("the Transporter firmware %s is not the expected file "
-                                      "(sha256 %s). %s, then start the wizard again"
-                                      % (uf2, got, RERUN_SETUP))
-            log.info("  Transporter firmware %s  sha256 %s  OK", uf2, got)
+                                      "(sha256 %s). %s --board %s, then start the wizard again"
+                                      % (uf2, got, RERUN_SETUP, board))
+            check_uf2_for_board(data, board, uf2.name)
+            log.info("  Transporter firmware %s  sha256 %s  OK (%s)", uf2, got, fw["label"])
         if pyserial_ok():
             log.info("  pyserial is installed")
         elif a.dry_run:
             log.info("  pyserial is not installed (not needed for a dry run)")
         else:
             raise fu.UnbrickError("pyserial is not installed. Run `python3 "
-                                  "fm1_transporter_recover.py setup`, then start the wizard again")
+                                  "fm1_transporter_recover.py setup --board %s`, then start the "
+                                  "wizard again" % board)
         self.v15 = self.get_v15()
 
     def step1_flash(self):
         a = self.args
-        self.step(1, "put the Transporter firmware on the XIAO",
-                  "  Plug the XIAO RP2040 into this computer with a USB-C DATA cable.\n"
+        bn = self.board_name
+        self.step(1, "put the Transporter firmware on the %s" % bn,
+                  "  Plug the %s into this computer with a USB-C DATA cable.\n"
                   "  Nothing else is wired to it yet, and the FM-1 is not involved in this "
-                  "step.\n  The wizard then copies the Transporter firmware onto the XIAO.")
-        ns = argparse.Namespace(uf2=str(a.uf2), dry_run=a.dry_run, port=a.port)
+                  "step.\n  The wizard then copies the Transporter firmware onto the board." % bn)
+        ns = argparse.Namespace(uf2=str(a.uf2), dry_run=a.dry_run, port=a.port, board=self.board,
+                                firmware=a.firmware)
+        flash_cmd = "flash-xiao" if self.board == "xiao_rp2040" else "flash-board"
         if a.dry_run:
-            log.info("DRY RUN: skipping flash-xiao (no hardware is touched)")
+            log.info("DRY RUN: skipping %s (no hardware is touched)", flash_cmd)
             if Path(a.uf2).is_file():
-                cmd_flash_xiao(ns)
+                cmd_flash_board(ns)
             return
-        answer = self.pause("Press Enter when the XIAO is plugged in (or type skip if it already "
-                            "runs the Transporter firmware)")
+        answer = self.pause("Press Enter when the %s is plugged in (or type skip if it already "
+                            "runs the Transporter firmware)" % bn)
         if answer.lower() == "skip":
-            log.info("Skipping the flash: the XIAO already runs the Transporter firmware.")
+            log.info("Skipping the flash: the board already runs the Transporter firmware.")
             return
 
         def go():
-            log.info("Flashing the XIAO ...")
-            if cmd_flash_xiao(ns) != EXIT_OK:
-                raise fu.UnbrickError("the XIAO did not come back with the Transporter firmware")
-            log.info("The XIAO runs the Transporter firmware.")
-        self.attempt("flashing the XIAO", go, FLASH_ADVICE)
+            log.info("Flashing the %s ...", bn)
+            if cmd_flash_board(ns) != EXIT_OK:
+                raise fu.UnbrickError("the board did not come back with the Transporter firmware")
+            log.info("The %s runs the Transporter firmware.", bn)
+        self.attempt("flashing the %s" % bn, go, FLASH_ADVICE)
 
     def step2_connect(self):
         a = self.args
-        self.step(2, "wire the XIAO to the FM-1 and switch the FM-1 on", WIRING_TEXT)
+        self.step(2, "wire the %s to the FM-1 and switch the FM-1 on" % self.board_name,
+                  wiring_text(self.board))
         self.pause("Press Enter when the three wires are connected and the FM-1 is still OFF")
-        self.say("  Now unplug the XIAO from the computer and plug it back in (this restarts\n"
+        self.say("  Now unplug the board from the computer and plug it back in (this restarts\n"
                  "  the Transporter so it is ready), then switch the FM-1 ON.\n"
                  "  The FM-1's screen stays dark: that is expected.")
         self.pause("Press Enter right after you have switched the FM-1 on")
@@ -1944,13 +2243,17 @@ def add_common(p, top):
                    help=argparse.SUPPRESS)
     p.add_argument("--mock-chip-key", type=int0, default=d(None), help=argparse.SUPPRESS)
     p.add_argument("--log-dir", default=d("logs"), help="log folder (default: ./logs)")
+    p.add_argument("--board", default=d(None),
+                   help="RP2040 board profile (../boards): %s" % ", ".join(board_ids()))
+    p.add_argument("--firmware", choices=("auto", "upstream", "multiboard"), default=d("auto"),
+                   help="XIAO only: upstream a632d92 (auto) or the multiboard build")
 
 
 def build_parser():
     ap = argparse.ArgumentParser(
         prog="fm1_transporter_recover.py",
         description="Recover a hard-bricked M-VAVE FM-1 through the FM-1 Transporter "
-                    "(XIAO RP2040 on the FM-1's USB D+/D-/GND).")
+                    "(an RP2040 board, chosen with --board, on the FM-1's USB D+/D-/GND).")
     ap.add_argument("--version", action="version", version=TOOL_VERSION)
     add_common(ap, True)
     sub = ap.add_subparsers(dest="command", metavar="COMMAND")
@@ -1965,21 +2268,24 @@ def build_parser():
                     "transporter/fm1_transporter.uf2, install pyserial")
     p.add_argument("--jl-dir", default=str(fu.DEFAULT_JL_DIR),
                    help="jl-uboot-tool folder (default: %(default)s)")
-    p.add_argument("--uf2", default=str(DEFAULT_UF2),
-                   help="where to write the Transporter firmware (default: %(default)s)")
+    p.add_argument("--uf2", default=None,
+                   help="where to write the Transporter firmware (default: transporter/<board>.uf2)")
     p.add_argument("--yes", action="store_true", help="install pyserial without asking")
     p.add_argument("--check", action="store_true",
                    help="only verify the four sha256s (placeholder, pattern, loader, result)")
     p = sp("wizard", "the whole recovery, step by step (run `setup` first)")
     p.add_argument("--v15", help="the official FM-1.fwsc (V15); asked for if missing")
     p.add_argument("--out", default="backups", help="dump folder (default: ./backups)")
-    p.add_argument("--uf2", default=str(DEFAULT_UF2),
-                   help="the Transporter firmware (default: %(default)s)")
+    p.add_argument("--uf2", default=None,
+                   help="the Transporter firmware (default: what setup wrote for the board)")
     p.add_argument("--yes", action="store_true",
                    help="skip the typed WRITE confirmation (and keyboard pauses without input)")
 
     p = sp("flash-xiao", "flash the Transporter firmware (.uf2) onto the XIAO RP2040")
     p.add_argument("uf2")
+    p = sp("flash-board", "flash the Transporter firmware (.uf2) onto the board given by --board")
+    p.add_argument("uf2", nargs="?", help="default: what setup wrote for the board")
+    sp("boards", "list the board profiles")
     sp("status", "wait for the FM-1 and print the Transporter status")
     sp("info", "check chip key 980F and flash id 856014")
     sp("rekey", "reboot the Transporter into USB_KEY mode")
@@ -2027,6 +2333,15 @@ def main(argv=None, transporter=None, input_fn=None):
             return cmd_wizard(args, transporter, input_fn)
         if cmd == "flash-xiao":
             return cmd_flash_xiao(args)
+        if cmd == "flash-board":
+            return cmd_flash_board(args)
+        if cmd == "boards":
+            for b in board_ids():
+                prof = get_board(b)
+                fw = board_firmware(b, "auto")
+                log.info("%-24s %-50s %s; firmware: %s", b, prof.name if prof else b,
+                         prof.validation if prof else "?", fw["label"])
+            return EXIT_OK
         if cmd == "analyse":
             return cmd_analyse(args)
         handler = {"status": cmd_status, "info": cmd_info, "rekey": cmd_rekey,
