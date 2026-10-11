@@ -201,6 +201,7 @@ message(STATUS "FM-1 Transporter: board ${FM1T_BOARD} (${FM1T_BOARD_NAME}), PICO
 set(FM1T_FW_VERSION "1.0.0-mb")
 set(FM1T_UPSTREAM "a632d92")
 set(FM1T_GIT_REV "nogit")
+set(FM1T_SOURCE_DATE "unknown")
 find_package(Git QUIET)
 if (GIT_FOUND)
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --short=10 HEAD
@@ -208,6 +209,9 @@ if (GIT_FOUND)
         OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE _rc)
     if (_rc EQUAL 0 AND _rev)
         set(FM1T_GIT_REV ${_rev})
+        execute_process(COMMAND ${GIT_EXECUTABLE} log -1 --format=%cs
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/.. OUTPUT_VARIABLE FM1T_SOURCE_DATE
+            OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
         execute_process(COMMAND ${GIT_EXECUTABLE} status --porcelain --untracked-files=no
             -- src pio boards cmake CMakeLists.txt lib/pico-pio-usb-bulk-multi-xact.patch
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/.. OUTPUT_VARIABLE _dirty ERROR_QUIET)
@@ -248,4 +252,7 @@ function(fm1t_apply_board TARGET)
     pico_set_program_name(${TARGET} "fm1_transporter")
     pico_set_program_version(${TARGET} "${FM1T_FW_VERSION}+${FM1T_BUILD_ID}")
     pico_set_program_url(${TARGET} "https://github.com/Nicodesy06/FM1Trasmitter-for-pico")
+    # Commit date instead of __DATE__ in the binary info, so a commit builds
+    # to the same bytes on any day (upstream's image embeds __DATE__).
+    target_compile_definitions(${TARGET} PRIVATE PICO_PROGRAM_BUILD_DATE="${FM1T_SOURCE_DATE}")
 endfunction()
