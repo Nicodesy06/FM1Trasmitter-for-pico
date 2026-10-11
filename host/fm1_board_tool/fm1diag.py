@@ -26,8 +26,15 @@ class Fm1Error(RuntimeError):
     pass
 
 
+V15_CHECK_AFTER = 6.0      # s in phase mounted before asking status (core 1 is serving by then)
+
+
 def wait_uboot(c, wait, on_phase=None, poll=0.5):
-    """Polls diag until phase == uboot. Returns {phase: seconds first seen}."""
+    """Polls diag until phase == uboot. Returns {phase: seconds first seen}.
+
+    In phases host/mounted core 1 runs the request loop, so `status` is safe
+    there; a unit that stays mounted without UBOOT is checked for stock V15
+    (which needs the recovery tool's USB-MIDI soft key, not this check)."""
     seen, t0, last = {}, time.monotonic(), None
     deadline = t0 + wait
     while True:
@@ -39,6 +46,12 @@ def wait_uboot(c, wait, on_phase=None, poll=0.5):
                 on_phase(ph, seen[ph], d)
         if ph == "uboot":
             return seen
+        if ph == "mounted" and time.monotonic() - t0 - seen["mounted"] > V15_CHECK_AFTER:
+            st = c.status(5)
+            if st.get("v15") == "1":
+                raise Fm1Error("the FM-1 runs its stock V15 firmware (4C4A:C755), so it is not "
+                               "bricked; to reach UBOOT use the recovery tool (`info`/`dump` send "
+                               "the USB-MIDI soft key)")
         if time.monotonic() >= deadline:
             raise Fm1Error("no UBOOT after %d s (phases seen: %s)" % (wait, ", ".join(seen)))
         last = ph

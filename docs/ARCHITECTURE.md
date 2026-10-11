@@ -1,5 +1,10 @@
 # Architecture
 
+> Multiboard fork: "XIAO RP2040" below stands for any board profile in `boards/`
+> (DollaTek RP2040 Type-C, Raspberry Pi Pico, ...). Pins, LEDs and PIO blocks come
+> from the profile (`src/board.h`); every current profile uses GP0 = D+, GP1 = D-.
+> Board identification and self-test commands: `src/selftest.h`.
+
 ## Data flow
 
 ```

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""fm1t - Mac-side client for the FM-1 Transporter data channel.
+"""fm1t - host-side client for the FM-1 Transporter data channel (macOS, Linux, Windows).
 
     fm1t.py status
     fm1t.py uboot          (stock V15 -> UBOOT via the USB-MIDI soft key)
@@ -42,8 +42,26 @@ import serial
 FLASH_SIZE = 0x100000
 
 
+def candidate_ports():
+    """Transporter data ports: USB 2E8A:000A, CDC interface 2 first; the
+    console (interface 0) is skipped. Works on Windows (COMx), Linux and macOS;
+    falls back to /dev/cu.usbmodem* when pyserial cannot list ports."""
+    import re
+    try:
+        from serial.tools import list_ports
+        ports = [p for p in list_ports.comports() if p.vid == 0x2E8A and p.pid == 0x000A]
+    except Exception:
+        ports = []
+
+    def itf(p):
+        m = re.search(r":(?:\d+|x)\.(\d+)", "%s %s" % (p.location or "", p.hwid or ""))
+        return int(m.group(1)) if m else None
+    found = [p.device for p in sorted(ports, key=lambda p: 0 if itf(p) == 2 else 1) if itf(p) != 0]
+    return found or sorted(glob.glob("/dev/cu.usbmodem*"))
+
+
 def find_port(explicit=None):
-    candidates = [explicit] if explicit else sorted(glob.glob("/dev/cu.usbmodem*"))
+    candidates = [explicit] if explicit else candidate_ports()
     for path in candidates:
         try:
             s = serial.Serial(path, 115200, timeout=0.3)
@@ -390,7 +408,7 @@ def cmd_ramrun(s, args):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--port", help="data port (default: probe /dev/cu.usbmodem*)")
+    ap.add_argument("--port", help="data port, e.g. COM8 (default: probe Transporter data ports)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("status")
     sub.add_parser("uboot")
